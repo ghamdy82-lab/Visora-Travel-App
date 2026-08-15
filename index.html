@@ -1,0 +1,2051 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Visora Travel - لوحة التحكم</title>
+    
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#6a0dad">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        
+        .page-section { display: none !important; }
+        .page-section.active { display: block !important; animation: fadeIn 0.4s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .top-header { background-color: #fff; display: flex; align-items: center; justify-content: space-between; padding: 15px 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); position: sticky; top: 0; z-index: 999; border-bottom: 3px solid #6a0dad; width: 100%; }
+        .right-header { display: flex; align-items: center; gap: 12px; }
+        .logo { width: 45px; height: 45px; border-radius: 50%; object-fit: cover; border: 2px solid #d4af37; } 
+        .top-header h1 { font-size: 1.2rem; color: #6a0dad; margin: 0; font-weight: bold;}
+        .left-header { font-size: 0.95rem; color: #444; background: #fdfbf7; padding: 6px 14px; border-radius: 20px; font-weight: bold; border: 1px solid #d4af37; direction: ltr; }
+
+        .role-badge { display: inline-block; color: white; padding: 5px 12px; border-radius: 12px; font-size: 0.85rem; font-weight: bold; margin-right: 10px; }
+        
+        /* إخفاء أزرار الإضافة والتعديل والحذف في وضع المعاينة */
+        body.is-preview .edit-btn, 
+        body.is-preview .delete-btn, 
+        body.is-preview .add-payment-btn,
+        body.is-preview .hide-in-preview { display: none !important; }
+
+        .content { padding: 20px; max-width: 1200px; margin: 20px auto 0; min-height: 70vh; padding-bottom: 80px; }
+        .form-card { background: #fff; padding: 25px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); border-top: 4px solid #6a0dad; position: relative; }
+        .form-card h3 { margin-bottom: 20px; color: #6a0dad; font-size: 1.2rem; text-align: center;}
+        
+        .close-form-btn { position: absolute; top: 15px; left: 15px; background: #f0e6fa; color: #6a0dad; border: none; width: 32px; height: 32px; border-radius: 50%; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.3s; }
+        .close-form-btn:hover { background: #dc3545; color: white; }
+
+        label { display: block; margin-bottom: 8px; font-weight: bold; color: #555; font-size: 0.9rem;}
+        select, input, textarea { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #e1e1e1; border-radius: 8px; font-size: 1rem; background-color: #fafafa; transition: 0.3s;}
+        select:focus, input:focus, textarea:focus { outline: none; border-color: #6a0dad; box-shadow: 0 0 5px rgba(106, 13, 173, 0.3); background-color: #fff;}
+        button { width: 100%; padding: 14px; background: linear-gradient(135deg, #6a0dad, #8b3dff); color: white; border: none; border-radius: 8px; font-size: 1.1rem; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        button:active { transform: scale(0.97); }
+
+        .daily-stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-bottom: 20px; }
+        .stat-card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); text-align: center; border-top: 4px solid #6a0dad; }
+        .stat-card h4 { color: #666; font-size: 0.95rem; margin-bottom: 8px; }
+        .stat-card h2 { color: #6a0dad; font-size: 1.6rem; margin: 0; }
+
+        .tabs-container { display: flex; flex-direction: row; align-items: center; justify-content: flex-start; gap: 10px; margin-bottom: 15px; width: 100%; overflow-x: auto; padding-bottom: 8px; }
+        .tab-btn { width: auto; padding: 10px 18px; border-radius: 8px; background-color: #fff; color: #6a0dad; border: 2px solid #e0d4f5; font-size: 0.95rem; font-weight: bold; cursor: pointer; white-space: nowrap; transition: 0.3s; }
+        .tab-btn:hover { background-color: #f0e6ff; }
+        .tab-btn.active { background-color: #6a0dad; color: white; border-color: #6a0dad; box-shadow: 0 4px 8px rgba(106, 13, 173, 0.2); }
+        .tab-badge { padding: 8px 15px; background-color: #fdfbf7; color: #6a0dad; border: 1px dashed #d4af37; border-radius: 8px; font-weight: bold; font-size: 0.9rem; white-space: nowrap; display: flex; gap: 10px;}
+
+        .form-grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; align-items: start;}
+        .form-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; align-items: start;}
+        .section-title { margin: 25px 0 15px; color: #d4af37; border-bottom: 2px solid #e1e1e1; padding-bottom: 8px; font-size: 1.1rem; font-weight: bold;}
+
+        .cards-grid { display: flex; flex-direction: column; gap: 15px; }
+        .list-row { background: #fff; border-right: 5px solid #d4af37; padding: 15px 20px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 15px; border: 1px solid #eee; transition: 0.3s;}
+        .list-row:hover { box-shadow: 0 5px 15px rgba(106, 13, 173, 0.1); transform: translateX(-5px); }
+        .edit-btn { background-color: #d4af37; color: white; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; font-weight: bold;}
+        .delete-btn { background-color: #dc3545; color: white; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; font-weight: bold;}
+        .add-payment-btn { background-color: #198754; color: white; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; font-weight: bold; margin-top: 5px;}
+        .whatsapp-btn { background-color: #25d366; color: white; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; font-weight: bold; margin-top: 5px;}
+
+        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: #fff; display: flex; justify-content: space-around; padding: 12px 0; box-shadow: 0 -2px 15px rgba(0,0,0,0.1); z-index: 998; width: 100%; }
+        .nav-item { display: flex; flex-direction: column; align-items: center; color: #a0a0a0; font-size: 0.8rem; gap: 6px; cursor: pointer; transition: 0.3s; }
+        .nav-item.active, .nav-item:hover { color: #d4af37; }
+
+        /* 🔧 إصلاح السايدبار للتأكد من إمكانية السكرول لرؤية زر الخروج */
+        .sidebar { position: fixed; top: 0; right: -300px; width: 280px; height: 100vh; background-color: #fff; box-shadow: -2px 0 15px rgba(0,0,0,0.1); transition: right 0.3s ease; z-index: 1001; display: flex; flex-direction: column; }
+        .sidebar.active { right: 0; }
+        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); display: none; z-index: 1000; }
+        .overlay.active { display: block; }
+        .sidebar-header { display: flex; justify-content: space-between; align-items: center; padding: 20px; background-color: #6a0dad; color: white; border-bottom: 3px solid #d4af37; }
+        .close-btn { background: none; border: none; color: white; font-size: 1.5rem; cursor: pointer; transition: 0.3s;}
+        .close-btn:hover { color: #d4af37; }
+        .sidebar-menu { list-style: none; padding: 0; margin: 0; flex: 1; overflow-y: auto; }
+        .sidebar-menu li { padding: 15px 20px; border-bottom: 1px solid #eee; cursor: pointer; font-size: 1.05rem; color: #333; transition: background 0.3s; font-weight: bold;}
+        .sidebar-menu li i { margin-left: 10px; color: #d4af37; width: 20px; text-align: center;}
+        .sidebar-menu li:hover { background-color: #f0e6fa; color: #6a0dad; }
+
+        #loginPage { display: flex !important; justify-content: center; align-items: center; height: 100vh; background-color: #f0f2f5; }
+        #loginPage.hidden { display: none !important; }
+        .login-container { background: white; padding: 40px; border-radius: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); width: 90%; max-width: 400px; text-align: center; border-top: 5px solid #6a0dad; }
+        .login-logo { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid #d4af37; margin-bottom: 15px; }
+
+        #toast-container { position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
+        .toast { background: #fff; border-right: 5px solid #198754; box-shadow: 0 4px 15px rgba(0,0,0,0.1); padding: 15px 20px; border-radius: 8px; display: flex; align-items: center; gap: 12px; min-width: 250px; font-weight: bold; color: #333; animation: slideInRight 0.4s ease forwards; }
+        .toast.error { border-right-color: #dc3545; }
+        .toast i.success-icon { color: #198754; font-size: 1.3rem; }
+        .toast i.error-icon { color: #dc3545; font-size: 1.3rem; }
+        @keyframes slideInRight { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes slideOutRight { from { transform: translateX(0); opacity: 1; } to { transform: translateX(100%); opacity: 0; } }
+
+        .custom-modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 3000; display: none; align-items: center; justify-content: center; backdrop-filter: blur(3px); animation: fadeIn 0.3s; }
+        .custom-modal { background: #fff; padding: 30px; border-radius: 15px; text-align: center; max-width: 400px; width: 90%; box-shadow: 0 10px 30px rgba(0,0,0,0.2); animation: popIn 0.3s ease; border-top: 5px solid #dc3545; }
+        @keyframes popIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .custom-modal h3 { color: #333; margin-bottom: 20px; font-size: 1.2rem; }
+        .custom-modal-btns { display: flex; gap: 15px; justify-content: center; margin-top: 20px; }
+        .custom-modal-btns button { padding: 10px 25px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 1rem; width: 50%; }
+        .btn-confirm { background: #dc3545; color: white; }
+        .btn-cancel { background: #e1e1e1; color: #333; }
+
+        @media print {
+            body * { visibility: hidden; }
+            #printableReportArea, #printableReportArea * { visibility: visible; }
+            #printableReportArea { position: absolute; left: 0; top: 0; width: 100%; background: white !important; box-shadow: none !important; }
+            button { display: none !important; }
+        }
+
+        @media (max-width: 900px) { 
+            .form-grid-4 { grid-template-columns: repeat(2, 1fr); } 
+            .form-grid-3 { grid-template-columns: 1fr; } 
+        }
+
+        @media (max-width: 600px) { 
+            .form-grid-4, .form-grid-3, .daily-stats-grid { grid-template-columns: 1fr; gap: 10px; }
+            .content { padding: 10px; margin-top: 5px; min-height: 80vh; padding-bottom: 70px; }
+            .form-card { padding: 15px; }
+            .top-header { flex-direction: column; gap: 10px; text-align: center; }
+            .left-header { font-size: 0.8rem; padding: 5px 10px; }
+            .list-row { flex-direction: column; align-items: stretch; text-align: right; gap: 10px; padding: 15px 10px; }
+            .list-row > div { min-width: 100% !important; text-align: right !important; }
+            .list-row .edit-btn, .list-row .delete-btn, .list-row .add-payment-btn, .list-row .whatsapp-btn { width: 100%; margin-top: 5px; padding: 12px; font-size: 1rem; }
+            .tabs-container { justify-content: flex-start; gap: 8px; }
+            .tab-btn { padding: 8px 12px; font-size: 0.85rem; }
+            .tab-badge { width: 100%; justify-content: center; margin-top: 8px; margin-right: 0; }
+            .login-container { width: 95%; padding: 20px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- القائمة الجانبية (السايدبار) -->
+    <div id="sidebar" class="sidebar">
+        <div class="sidebar-header">
+            <h3>القائمة الرئيسية</h3>
+            <button class="close-btn" onclick="toggleSidebar()"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <ul class="sidebar-menu">
+            <li onclick="showPage('homePage'); toggleSidebar();"><i class="fa-solid fa-house"></i> الرئيسية</li>
+            <li onclick="showPage('clientsPage'); toggleSidebar();"><i class="fa-solid fa-address-book"></i> إدارة العملاء</li>
+            <li onclick="showPage('employeesPage'); toggleSidebar();"><i class="fa-solid fa-users"></i> إدارة الموظفين</li>
+            <li onclick="showPage('expensesPage'); toggleSidebar();"><i class="fa-solid fa-wallet"></i> المصاريف العامة</li>
+            <li onclick="showPage('reportsPage'); toggleSidebar();"><i class="fa-solid fa-chart-pie"></i> التقرير الشهري والرسم البياني</li>
+            <li onclick="showPage('attendancePage'); toggleSidebar();"><i class="fa-solid fa-calendar-check"></i> سجل الحضور والغياب</li>
+            <li onclick="showPage('settingsPage'); toggleSidebar();"><i class="fa-solid fa-gear"></i> الإعدادات والسفارات</li>
+            
+            <!-- 🔴 زر خروج واضح ومؤكد داخل السايدبار -->
+            <li onclick="secureLogout(); toggleSidebar();" style="background: #dc3545; color: white; margin: 15px 10px; border-radius: 8px; text-align: center; font-weight: bold;">
+                <i class="fa-solid fa-right-from-bracket" style="color: white;"></i> تسجيل الخروج النهائي
+            </li>
+        </ul>
+    </div>
+    <div id="sidebarOverlay" class="overlay" onclick="toggleSidebar()"></div>
+
+    <!-- حاوية الإشعارات -->
+    <div id="toast-container"></div>
+
+    <!-- نافذة التأكيد الشيك -->
+    <div id="customConfirm" class="custom-modal-overlay">
+        <div class="custom-modal">
+            <i class="fa-solid fa-triangle-exclamation" style="font-size: 3.5rem; color: #dc3545; margin-bottom: 15px;"></i>
+            <h3 id="confirmMessage">هل أنتِ متأكدة؟</h3>
+            <div class="custom-modal-btns">
+                <button id="confirmYes" class="btn-confirm">نعم، متأكدة</button>
+                <button id="confirmNo" class="btn-cancel">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- نافذة تحصيل الدفعة -->
+    <div id="paymentModal" class="overlay" style="display:none; z-index:2000; align-items:center; justify-content:center;">
+        <div class="login-container" style="max-width:400px; text-align:right;">
+            <h3 style="color:#6a0dad; margin-bottom:15px;"><i class="fa-solid fa-hand-holding-dollar"></i> تحصيل دفعة جديدة</h3>
+            <p id="paymentModalClientInfo" style="color:#555; margin-bottom:15px; font-size:0.95rem; line-height:1.6;"></p>
+            <label>المبلغ المجموع اليوم (ج.م):</label>
+            <input type="text" id="customPaymentInput" class="format-num" placeholder="0" style="font-size:1.3rem; font-weight:bold; color:#198754; text-align:center; border-color:#198754;">
+            <div style="display:flex; gap:10px; margin-top:15px;">
+                <button id="confirmPaymentBtn" style="background:#198754;">تأكيد التحصيل</button>
+                <button onclick="closePaymentModal()" style="background:#888;">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 1. تسجيل الدخول -->
+    <div id="loginPage" class="page-section active">
+        <div class="login-container">
+            <img src="1.png" alt="Visora Logo" class="login-logo" onerror="this.src='https://via.placeholder.com/80'">
+            <h2 style="color: #6a0dad; margin-bottom: 10px;">Visora Travel</h2>
+            <p style="color: #666; margin-bottom: 20px;">برجاء تسجيل الدخول للمتابعة</p>
+            <form id="loginForm">
+                <input type="email" id="username" placeholder="اسم المستخدم (الإيميل)" required>
+                <input type="password" id="password" placeholder="كلمة المرور" required>
+                <button type="submit" id="loginBtn">تسجيل الدخول</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- 2. لوحة التحكم الرئيسية -->
+    <div id="homePage" class="page-section">
+        <header class="top-header">
+            <div class="right-header">
+                <img src="1.png" alt="Visora Logo" class="logo" onerror="this.style.display='none'">
+                <h1>Visora Travel</h1>
+                <span id="headerRoleBadge" class="role-badge"></span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <!-- 🔴 زرار خروج سريع في أعلى الشاشة -->
+                <button onclick="secureLogout()" style="background:#dc3545; color:white; border:none; padding:6px 14px; border-radius:8px; font-size:0.85rem; width:auto; cursor:pointer;"><i class="fa-solid fa-right-from-bracket"></i> خروج</button>
+                <div class="left-header" id="currentDateDisplay"></div>
+            </div>
+        </header>
+        <main class="content" style="padding-top: 20px;">
+            <h2 style="color: #6a0dad; margin-bottom: 5px; text-align: center;">مرحباً بكِ في نظام إدارة الشركة</h2>
+            
+            <!-- إحصائيات لوحة التحكم -->
+            <div id="managerStats">
+                <p style="color: #666; margin-bottom: 25px; text-align: center;">متابعة حركة الخزنة اليومية:</p>
+                <div class="daily-stats-grid">
+                    <div class="stat-card" style="border-top-color: #198754;">
+                        <h4>إيراد اليوم (الدخل)</h4>
+                        <h2 id="dailyRevenueVal" style="color: #198754;">0 ج.م</h2>
+                    </div>
+                    <div class="stat-card" style="border-top-color: #dc3545;">
+                        <h4>مصروف اليوم (ملفات وعامة)</h4>
+                        <h2 id="dailyExpensesVal" style="color: #dc3545;">0 ج.م</h2>
+                    </div>
+                    <div class="stat-card" style="border-top-color: #d4af37;">
+                        <h4>الربح اليومي (الصافي)</h4>
+                        <h2 id="dailyProfitVal" style="color: #d4af37;">0 ج.م</h2>
+                    </div>
+                    <div class="stat-card" style="border-top-color: #0dcaf0;">
+                        <h4>إجمالي المتبقي برة (الآجل)</h4>
+                        <h2 id="totalRemainingDebtVal" style="color: #0dcaf0;">0 ج.م</h2>
+                    </div>
+                </div>
+
+                <div style="max-width: 700px; margin: 0 auto; text-align: center;">
+                    <button id="togglePeriodBtn" onclick="togglePeriodFilter(event)" style="background: #6a0dad; max-width: 250px; margin: 0 auto 15px auto; padding: 10px; font-size: 1rem;"><i class="fa-solid fa-calendar-days"></i> حساب فترة معينة</button>
+                    
+                    <div id="periodFilterBox" class="form-card" style="display: none; padding: 20px; background: #fdfbf7;">
+                        <button class="close-form-btn" onclick="togglePeriodFilter(event)" title="إغلاق">✕</button>
+                        <h4 style="color: #6a0dad; margin-bottom: 15px;">فلتر متابعة دخل وصرف فترة معينة</h4>
+                        <div style="display: flex; gap: 10px; align-items: center; justify-content: center; flex-wrap: wrap; margin-bottom: 15px;">
+                            <div><label style="font-size: 0.8rem; margin-bottom: 2px;">من تاريخ:</label><input type="date" id="customDateFrom" style="margin-bottom:0; padding:8px;"></div>
+                            <div><label style="font-size: 0.8rem; margin-bottom: 2px;">إلى تاريخ:</label><input type="date" id="customDateTo" style="margin-bottom:0; padding:8px;"></div>
+                            <div style="align-self: flex-end;"><button onclick="calculateCustomPeriodStats()" style="padding: 10px 20px; font-size: 0.95rem;">عرض الفترة</button></div>
+                        </div>
+                        
+                        <div class="daily-stats-grid" style="margin-bottom: 0;">
+                            <div class="stat-card" style="border-top-color: #198754;">
+                                <h4>إيرادات الفترة</h4>
+                                <h2 id="customRevenueVal" style="color: #198754; font-size: 1.3rem;">0 ج.م</h2>
+                            </div>
+                            <div class="stat-card" style="border-top-color: #dc3545;">
+                                <h4>مصاريف الفترة</h4>
+                                <h2 id="customExpensesVal" style="color: #dc3545; font-size: 1.3rem;">0 ج.م</h2>
+                            </div>
+                            <div class="stat-card" style="border-top-color: #d4af37;">
+                                <h4>ربح الفترة</h4>
+                                <h2 id="customProfitVal" style="color: #d4af37; font-size: 1.3rem;">0 ج.م</h2>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+        <nav class="bottom-nav">
+            <div class="nav-item active" onclick="showPage('homePage')"><i class="fa-solid fa-house"></i><span>الرئيسية</span></div>
+            <div class="nav-item" onclick="showPage('clientsPage')"><i class="fa-solid fa-address-book"></i><span>العملاء</span></div>
+            <div class="nav-item" onclick="showPage('reportsPage')"><i class="fa-solid fa-chart-pie"></i><span>التقارير</span></div>
+            <div class="nav-item" onclick="toggleSidebar()"><i class="fa-solid fa-bars"></i><span>القائمة</span></div>
+        </nav>
+    </div>
+
+    <!-- 3. إدارة العملاء -->
+    <div id="clientsPage" class="page-section">
+        <header class="top-header">
+            <div class="right-header">
+                <img src="1.png" alt="Visora Logo" class="logo" onerror="this.style.display='none'">
+                <h1>إدارة العملاء</h1>
+            </div>
+            <button onclick="secureLogout()" style="background:#dc3545; color:white; border:none; padding:6px 14px; border-radius:8px; font-size:0.85rem; width:auto; cursor:pointer;"><i class="fa-solid fa-right-from-bracket"></i> خروج</button>
+        </header>
+        <main class="content">
+            <div style="display: flex; gap: 10px; margin-bottom: 12px; align-items: center; flex-wrap: wrap;">
+                <div style="flex: 2; min-width: 220px; margin-bottom: 0;">
+                    <input type="text" id="clientSearchInput" placeholder="🔍 بحث سريع باسم العميل أو رقم التليفون..." oninput="triggerClientSearch()" style="margin-bottom:0; padding:10px;">
+                </div>
+                <button id="addClientBtn" class="tab-btn hide-in-preview" onclick="toggleClientForm()" style="flex: 1; min-width: 170px;"><i class="fa-solid fa-user-plus"></i> إضافة ملف عميل جديد</button>
+                <div class="tab-badge">الملفات: <span id="clientsCountBadge">0</span></div>
+            </div>
+
+            <div style="display: flex; gap: 10px; margin-bottom: 20px; align-items: center; flex-wrap: wrap;">
+                <div class="tabs-container" id="salesRepsTabContainer" style="margin-bottom: 0; flex: 1;"></div>
+                <div style="display: flex; align-items: center; gap: 5px;">
+                    <label style="margin: 0; font-size: 0.85rem;">الشهر:</label>
+                    <input type="month" id="clientFilterMonth" onchange="loadClients(true)" style="margin-bottom: 0; padding: 6px; font-size: 0.9rem;">
+                </div>
+            </div>
+
+            <div id="addClientSection" class="form-card client-tab-content hide-in-preview" style="display: none; margin-bottom: 25px;">
+                <button class="close-form-btn" onclick="toggleClientForm()" title="إغلاق">✕</button>
+                <h3 id="clientFormTitle">إضافة ملف جديد</h3>
+                <div class="form-grid-4">
+                    <div><label>تاريخ الملف</label><input type="date" id="cDate"></div>
+                    <div>
+                        <label>موظفة السيلز</label>
+                        <select id="cSalesRep">
+                            <option value="">-- اختاري --</option>
+                        </select>
+                    </div>
+                    <div><label>اسم العميل</label><input type="text" id="cName" placeholder="اسم العميل"></div>
+                    <div><label>رقم التليفون (للواتساب)</label><input type="text" id="cPhone" placeholder="010xxxxxxx"></div>
+                    <div>
+                        <label>السفارة</label>
+                        <select id="cEmbassy">
+                            <option value="">-- اختاري --</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>نوع التأشيرة</label>
+                        <select id="cVisaType"><option value="سياحة">سياحة</option><option value="عمل">عمل</option><option value="دراسة">دراسة</option></select>
+                    </div>
+                    <div><label>إجمالي المبلغ المطلوب (ج.م)</label><input type="text" id="cTotalAmount" class="format-num" placeholder="0" oninput="calculateRemainingInForm()" style="border-color: #6a0dad; background: #fdfbf7; font-weight: bold;"></div>
+                    <div><label>المدفوع حالياً (الدفعة الأولى)</label><input type="text" id="cPaid" class="format-num" placeholder="0" oninput="calculateRemainingInForm()" style="border-color: #198754; background: #fdfbf7;"></div>
+                    <div><label>المتبقي علي العميل</label><input type="text" id="cRemaining" readonly placeholder="0" style="border-color: #dc3545; background: #fff0f0; font-weight: bold; color: #dc3545;"></div>
+                </div>
+
+                <h4 class="section-title">مصاريف الملف</h4>
+                <div class="form-grid-4">
+                    <div><label>حجز ميعاد</label><input type="text" class="c-expense format-num" id="eAppt" value="" placeholder="0"></div>
+                    <div><label>شراء الدعوة</label><input type="text" class="c-expense format-num" id="eInvite" value="" placeholder="0"></div>
+                    <div><label>الترجمة</label><input type="text" class="c-expense format-num" id="eTrans" value="" placeholder="0"></div>
+                    <div><label>الشحن</label><input type="text" class="c-expense format-num" id="eShip" value="" placeholder="0"></div>
+                    <div><label>الطيران</label><input type="text" class="c-expense format-num" id="eFlight" value="" placeholder="0"></div>
+                    <div><label>الطباعة</label><input type="text" class="c-expense format-num" id="ePrint" value="" placeholder="0"></div>
+                    <div><label>مصاريف أخرى</label><input type="text" class="c-expense format-num" id="eOther" value="" placeholder="0"></div>
+                </div>
+
+                <div style="margin-top: 10px;"><label>ملاحظات</label><textarea id="cNotes" rows="2" placeholder="اختياري..."></textarea></div>
+
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button id="clientSaveBtn">حفظ الملف</button>
+                    <button id="clientCancelBtn" style="display:none; background:#888;">إلغاء التعديل</button>
+                </div>
+            </div>
+
+            <div id="listClientSection">
+                <div id="clientsListContainer" class="cards-grid"></div>
+            </div>
+        </main>
+        <nav class="bottom-nav">
+            <div class="nav-item" onclick="showPage('homePage')"><i class="fa-solid fa-house"></i><span>الرئيسية</span></div>
+            <div class="nav-item active" onclick="showPage('clientsPage')"><i class="fa-solid fa-address-book"></i><span>العملاء</span></div>
+            <div class="nav-item" onclick="showPage('reportsPage')"><i class="fa-solid fa-chart-pie"></i><span>التقارير</span></div>
+            <div class="nav-item" onclick="toggleSidebar()"><i class="fa-solid fa-bars"></i><span>القائمة</span></div>
+        </nav>
+    </div>
+
+    <!-- 4. إدارة الموظفين -->
+    <div id="employeesPage" class="page-section">
+        <header class="top-header">
+            <div class="right-header"><img src="1.png" alt="Visora Logo" class="logo" onerror="this.style.display='none'"><h1>إدارة الموظفين</h1></div>
+            <button onclick="secureLogout()" style="background:#dc3545; color:white; border:none; padding:6px 14px; border-radius:8px; font-size:0.85rem; width:auto; cursor:pointer;"><i class="fa-solid fa-right-from-bracket"></i> خروج</button>
+        </header>
+        <main class="content">
+            <div class="tabs-container">
+                <button class="tab-btn hide-in-preview" onclick="toggleEmpForm()"><i class="fa-solid fa-user-plus"></i> إضافة موظف</button>
+                <button class="tab-btn" onclick="fetchEmployees('sales', this)"><i class="fa-solid fa-headset"></i> فريق السيلز</button>
+                <button class="tab-btn" onclick="fetchEmployees('others', this)"><i class="fa-solid fa-users-gear"></i> باقي الفريق</button>
+                <div class="tab-badge">
+                    <span>السيلز: <span id="salesCountBadge">0</span></span> | 
+                    <span>الباقي: <span id="othersCountBadge">0</span></span>
+                </div>
+            </div>
+
+            <div id="addEmpSection" class="form-card emp-tab-content hide-in-preview" style="display: none; margin-bottom: 20px;">
+                <button class="close-form-btn" onclick="toggleEmpForm()" title="إغلاق">✕</button>
+                <h3 id="empFormTitle">إضافة موظف جديد</h3>
+                <div class="form-grid-3">
+                    <div><label>اسم الموظف:</label><input type="text" id="empName"></div>
+                    <div><label>الوظيفة (مثال: سيلز):</label><input type="text" id="empRole"></div>
+                    <div><label>المرتب:</label><input type="text" class="format-num" id="empSalary" placeholder="0"></div>
+                    <div><label>العنوان:</label><input type="text" id="empAddress" placeholder="اختياري"></div>
+                    <div><label>رقم التليفون:</label><input type="text" id="empContact"></div>
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button id="addEmpBtn">تسجيل الموظف</button>
+                    <button id="empCancelBtn" style="display:none; background:#888;">إلغاء التعديل</button>
+                </div>
+            </div>
+
+            <div id="listEmpSection">
+                <h3 id="empListTitle" style="color: #6a0dad; margin-bottom: 15px; text-align: center;">فريق العمل</h3>
+                <div id="employeesList" class="cards-grid">
+                    <p style="text-align:center; color:#888; padding:30px;">اختر تابة "فريق السيلز" أو "باقي الفريق" لعرض الموظفين.</p>
+                </div>
+            </div>
+        </main>
+        <nav class="bottom-nav">
+            <div class="nav-item" onclick="showPage('homePage')"><i class="fa-solid fa-house"></i><span>الرئيسية</span></div>
+            <div class="nav-item active" onclick="showPage('employeesPage')"><i class="fa-solid fa-users"></i><span>الموظفين</span></div>
+            <div class="nav-item" onclick="showPage('reportsPage')"><i class="fa-solid fa-chart-pie"></i><span>التقارير</span></div>
+            <div class="nav-item" onclick="toggleSidebar()"><i class="fa-solid fa-bars"></i><span>القائمة</span></div>
+        </nav>
+    </div>
+
+    <!-- 5. المصاريف العامة -->
+    <div id="expensesPage" class="page-section">
+        <header class="top-header">
+            <div class="right-header"><img src="1.png" alt="Visora Logo" class="logo" onerror="this.style.display='none'"><h1>إدارة المصاريف العامة</h1></div>
+            <button onclick="secureLogout()" style="background:#dc3545; color:white; border:none; padding:6px 14px; border-radius:8px; font-size:0.85rem; width:auto; cursor:pointer;"><i class="fa-solid fa-right-from-bracket"></i> خروج</button>
+        </header>
+        <main class="content">
+            <div class="tabs-container">
+                <button class="tab-btn hide-in-preview" onclick="toggleExpenseForm()"><i class="fa-solid fa-wallet"></i> إضافة مصروف</button>
+                <button class="tab-btn" id="loadExpBtn" onclick="loadGeneralExpenses(this)"><i class="fa-solid fa-list"></i> عرض سجل المصاريف</button>
+                <div style="margin-right: auto; display: flex; align-items: center; gap: 8px;">
+                    <label style="margin: 0; font-size: 0.85rem;">الشهر:</label>
+                    <input type="month" id="expenseFilterMonth" onchange="loadGeneralExpenses()" style="margin-bottom: 0; padding: 6px; font-size: 0.9rem;">
+                </div>
+                <div class="tab-badge">المصاريف: <span id="expensesCountBadge">0</span></div>
+            </div>
+
+            <div id="addExpenseSection" class="form-card exp-tab-content hide-in-preview" style="display: none; margin-bottom: 20px;">
+                <button class="close-form-btn" onclick="toggleExpenseForm()" title="إغلاق">✕</button>
+                <h3 id="expFormTitle">تسجيل مصروف عام جديد</h3>
+                <div class="form-grid-3">
+                    <div><label>تاريخ المصروف:</label><input type="date" id="generalExpDate"></div>
+                    <div><label>بند المصروف:</label><input type="text" id="generalExpTitle" placeholder="مثال: إيجار المكتب، كهرباء"></div>
+                    <div><label>المبلغ (ج.م):</label><input type="text" class="format-num" id="generalExpAmount" placeholder="0"></div>
+                </div>
+                <div style="margin-top: 20px; text-align: center;">
+                    <button id="saveGeneralExpBtn" style="width: 50%;">حفظ المصروف</button>
+                    <button id="expCancelBtn" style="display:none; background:#888; width: 30%; margin-right: 10px;">إلغاء التعديل</button>
+                </div>
+            </div>
+
+            <div id="listExpenseSection">
+                <div id="expensesListContainer" class="cards-grid">
+                    <p style="text-align:center; color:#888; padding:30px;">اضغطي على "عرض سجل المصاريف" لرؤية قائمة المصاريف العامة.</p>
+                </div>
+            </div>
+        </main>
+        <nav class="bottom-nav">
+            <div class="nav-item" onclick="showPage('homePage')"><i class="fa-solid fa-house"></i><span>الرئيسية</span></div>
+            <div class="nav-item" onclick="showPage('reportsPage')"><i class="fa-solid fa-chart-pie"></i><span>التقارير</span></div>
+            <div class="nav-item" onclick="toggleSidebar()"><i class="fa-solid fa-bars"></i><span>القائمة</span></div>
+        </nav>
+    </div>
+
+    <!-- 6. التقرير الشهري والرسم البياني -->
+    <div id="reportsPage" class="page-section">
+        <header class="top-header">
+            <div class="right-header"><img src="1.png" alt="Visora Logo" class="logo" onerror="this.style.display='none'"><h1>التقرير الشهري والأرباح</h1></div>
+            <button onclick="secureLogout()" style="background:#dc3545; color:white; border:none; padding:6px 14px; border-radius:8px; font-size:0.85rem; width:auto; cursor:pointer;"><i class="fa-solid fa-right-from-bracket"></i> خروج</button>
+        </header>
+        <main class="content">
+            <div class="form-card" style="margin-bottom: 25px;">
+                <h3>اختر الشهر للتقرير والتحليلات</h3>
+                <div style="display: flex; gap: 15px; align-items: center; justify-content: center;">
+                    <input type="month" id="reportMonthInput" style="max-width: 250px; margin-bottom: 0;">
+                    <button onclick="calculateMonthlyReport()" style="max-width: 150px; padding: 12px;">عرض التقرير</button>
+                </div>
+            </div>
+
+            <div id="reportContainerWrapper" class="form-card" style="display: none; background: #fdfbf7;">
+                <div class="tabs-container">
+                    <button class="tab-btn active" onclick="switchReportTab('commTab', this)"><i class="fa-solid fa-percent"></i> حساب الكوميشن</button>
+                    <button class="tab-btn" onclick="switchReportTab('contentTab', this)"><i class="fa-solid fa-chart-line"></i> ملخص الأرباح</button>
+                    <button class="tab-btn" onclick="switchReportTab('chartsTab', this)"><i class="fa-solid fa-chart-pie"></i> الرسومات البيانية</button>
+                    <button class="tab-btn" onclick="switchReportTab('printTab', this)"><i class="fa-solid fa-print"></i> معاينة الطباعة</button>
+                    <button class="tab-btn" onclick="switchReportTab('exportTab', this)"><i class="fa-solid fa-file-excel"></i> تصدير إكسيل</button>
+                </div>
+
+                <div id="commTab" class="report-tab-content">
+                    <h3 style="color: #6a0dad; margin-bottom: 15px;">حساب كوميشن السيلز (الصافي الفعلي لكل بنت)</h3>
+                    <p style="color: #666; font-size: 0.9rem; margin-bottom: 20px;">* الصافي القابل للعمولة = (إيرادات الخزنة المحصلة لها - مصاريف ملفاتها - مرتبها الأساسي)</p>
+                    <div id="salesCommissionContainer" style="margin-bottom: 25px;"></div>
+                </div>
+
+                <div id="contentTab" class="report-tab-content" style="display: none;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h3 style="color: #6a0dad; margin: 0;">دورة الأرباح وتصفيات الشهر</h3>
+                        <div id="lockMonthWrapper" class="hide-in-preview">
+                            <button id="lockMonthBtn" onclick="lockCurrentMonth()" style="background: #dc3545; padding: 8px 15px; font-size: 0.9rem; width: auto;"><i class="fa-solid fa-lock"></i> قفل حساب الشهر نهائياً</button>
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-bottom: 25px;">
+                        <div style="background: white; padding: 15px; border-radius: 10px; border-right: 4px solid #198754; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+                            <span style="color: #666; font-size: 0.9rem;">إيرادات الخزنة المحصلة:</span>
+                            <h3 id="repTotalPaid" style="color: #198754; margin: 5px 0 0 0;">0 ج.م</h3>
+                        </div>
+                        <div style="background: white; padding: 15px; border-radius: 10px; border-right: 4px solid #dc3545; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+                            <span style="color: #666; font-size: 0.9rem;">مصاريف الملفات (سفارات/طيران):</span>
+                            <h3 id="repTotalFileExp" style="color: #dc3545; margin: 5px 0 0 0;">0 ج.م</h3>
+                        </div>
+                        <div style="background: white; padding: 15px; border-radius: 10px; border-right: 4px solid #0dcaf0; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+                            <span style="color: #666; font-size: 0.9rem;">مرتبات السيلز (الأساسية):</span>
+                            <h3 id="repSalesSalaries" style="color: #0dcaf0; margin: 5px 0 0 0;">0 ج.م</h3>
+                        </div>
+                        <div style="background: white; padding: 15px; border-radius: 10px; border-right: 4px solid #fd7e14; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+                            <span style="color: #666; font-size: 0.9rem;">إجمالي عمولات السيلز:</span>
+                            <h3 id="repSalesComm" style="color: #fd7e14; margin: 5px 0 0 0;">0 ج.م</h3>
+                        </div>
+                        <div style="background: white; padding: 15px; border-radius: 10px; border-right: 4px solid #6a0dad; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+                            <span style="color: #666; font-size: 0.9rem;">صافي ربح السيلز المبدئي:</span>
+                            <h3 id="repSalesNet" style="color: #6a0dad; margin: 5px 0 0 0;">0 ج.م</h3>
+                        </div>
+                        <div style="background: white; padding: 15px; border-radius: 10px; border-right: 4px solid #6f42c1; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+                            <span style="color: #666; font-size: 0.9rem;">المصاريف العامة (إيجار وغيرها):</span>
+                            <h3 id="repGeneralExp" style="color: #6f42c1; margin: 5px 0 0 0;">0 ج.م</h3>
+                        </div>
+                        <div style="background: white; padding: 15px; border-radius: 10px; border-right: 4px solid #d4af37; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+                            <span style="color: #666; font-size: 0.9rem;">مرتبات الإدارة وباقي الفريق:</span>
+                            <h3 id="repAdminSalaries" style="color: #d4af37; margin: 5px 0 0 0;">0 ج.م</h3>
+                        </div>
+                    </div>
+
+                    <div style="background: linear-gradient(135deg, #6a0dad, #8b3dff); color: white; padding: 20px; border-radius: 12px; text-align: center;">
+                        <h3 style="color: white; margin-bottom: 5px;">صافي ربح الشركة النهائي (بعد كافة الخصومات)</h3>
+                        <h1 id="repNetProfit" style="color: #d4af37; font-size: 2.2rem; margin: 0;">0 ج.م</h1>
+                    </div>
+                </div>
+
+                <div id="chartsTab" class="report-tab-content" style="display: none; background: white; padding: 20px; border-radius: 10px;">
+                    <h3 style="color: #6a0dad; margin-bottom: 20px; text-align: center;">التحليلات والرسومات البيانية للشهر</h3>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+                        <div style="background: #fafafa; padding: 15px; border-radius: 10px; text-align: center;">
+                            <h4 style="color: #555; margin-bottom: 10px;">توزيع الملفات حسب السفارات</h4>
+                            <canvas id="embassyChart" style="max-height: 250px;"></canvas>
+                        </div>
+                        <div style="background: #fafafa; padding: 15px; border-radius: 10px; text-align: center;">
+                            <h4 style="color: #555; margin-bottom: 10px;">إيرادات موظفات السيلز (ج.م)</h4>
+                            <canvas id="salesChart" style="max-height: 250px;"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="printTab" class="report-tab-content" style="display: none; background: white; text-align: center; padding: 20px;">
+                    <div id="printableReportArea" style="text-align: right;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #6a0dad; padding-bottom: 15px; margin-bottom: 20px;">
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <img src="1.png" alt="Logo" style="width: 60px; height: 60px; border-radius: 50%; border: 2px solid #d4af37;" onerror="this.style.display='none'">
+                                <div>
+                                    <h2 style="color: #6a0dad; margin: 0; font-size: 1.5rem;">Visora Travel</h2>
+                                    <span style="color: #666; font-size: 0.95rem;">تقرير الأرباح والحسابات الرسمية</span>
+                                </div>
+                            </div>
+                            <div style="text-align: left;">
+                                <strong id="printMonthLabel" style="color: #333; font-size: 1.1rem;"></strong><br>
+                                <span style="color: #888; font-size: 0.85rem;">تاريخ الاصدار: <span id="printIssueDate"></span></span>
+                            </div>
+                        </div>
+                        <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+                            <thead>
+                                <tr style="background: #f0e6fa; color: #6a0dad;">
+                                    <th style="padding: 12px; border: 1px solid #ddd; text-align: right;">بند الحساب المالي</th>
+                                    <th style="padding: 12px; border: 1px solid #ddd; text-align: left;">القيمة (ج.م)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="printTableBody"></tbody>
+                        </table>
+                    </div>
+                    <button onclick="window.print()" style="max-width: 250px; background: #6a0dad; margin: 20px auto 0;"><i class="fa-solid fa-print"></i> طباعة الوثيقة الرسمية</button>
+                </div>
+
+                <div id="exportTab" class="report-tab-content" style="display: none; text-align: center; background: white; padding: 40px;">
+                    <i class="fa-solid fa-file-excel" style="font-size: 4rem; color: #198754; margin-bottom: 15px;"></i>
+                    <h3 style="color: #333;">تصدير التقرير الشهري لملف Excel</h3>
+                    <button onclick="exportReportToExcel()" style="max-width: 250px; background: #198754; margin: 20px auto 0;"><i class="fa-solid fa-download"></i> تحميل ملف إكسيل</button>
+                </div>
+            </div>
+        </main>
+        <nav class="bottom-nav">
+            <div class="nav-item" onclick="showPage('homePage')"><i class="fa-solid fa-house"></i><span>الرئيسية</span></div>
+            <div class="nav-item active" onclick="showPage('reportsPage')"><i class="fa-solid fa-chart-pie"></i><span>التقارير</span></div>
+            <div class="nav-item" onclick="toggleSidebar()"><i class="fa-solid fa-bars"></i><span>القائمة</span></div>
+        </nav>
+    </div>
+
+    <!-- 7. سجل الحضور والغياب -->
+    <div id="attendancePage" class="page-section">
+        <header class="top-header">
+            <div class="right-header"><img src="1.png" alt="Visora Logo" class="logo" onerror="this.style.display='none'"><h1>سجل الحضور والغياب</h1></div>
+            <button onclick="secureLogout()" style="background:#dc3545; color:white; border:none; padding:6px 14px; border-radius:8px; font-size:0.85rem; width:auto; cursor:pointer;"><i class="fa-solid fa-right-from-bracket"></i> خروج</button>
+        </header>
+        <main class="content">
+            <div class="form-card" style="text-align: center; padding: 50px 20px;">
+                <i class="fa-solid fa-calendar-check" style="font-size: 4rem; color: #6a0dad; margin-bottom: 20px;"></i>
+                <h2 style="color: #6a0dad; margin-bottom: 10px;">شاشة الحضور والغياب</h2>
+                <p style="color: #666; max-width: 500px; margin: 0 auto 20px auto;">تم تجهيز الواجهة البرمجية المخصصة لتسجيل الحضور اليومي للموظفين وساعات التأخير والغياب.</p>
+                <button onclick="showPage('homePage')" style="max-width: 200px; margin: 0 auto;">العودة للرئيسية</button>
+            </div>
+        </main>
+    </div>
+
+    <!-- 8. صفحة الإعدادات والأمان وإدارة السفارات + الأرشيف السري -->
+    <div id="settingsPage" class="page-section">
+        <header class="top-header">
+            <div class="right-header"><img src="1.png" alt="Visora Logo" class="logo" onerror="this.style.display='none'"><h1>الإعدادات والسفارات</h1></div>
+            <button onclick="secureLogout()" style="background:#dc3545; color:white; border:none; padding:6px 14px; border-radius:8px; font-size:0.85rem; width:auto; cursor:pointer;"><i class="fa-solid fa-right-from-bracket"></i> خروج</button>
+        </header>
+        <main class="content">
+            <div class="tabs-container">
+                <button class="tab-btn" onclick="switchSettingsTab('securitySettingsTab', this)"><i class="fa-solid fa-lock"></i> أمان الحسابات والبريد</button>
+                <button class="tab-btn" onclick="switchSettingsTab('embassySettingsTab', this); loadEmbassiesMasterList();"><i class="fa-solid fa-landmark"></i> إدارة السفارات</button>
+                <button class="tab-btn" onclick="switchSettingsTab('backupSettingsTab', this)"><i class="fa-solid fa-database"></i> النسخة الاحتياطية</button>
+                <button class="tab-btn" style="background:#dc3545; color:white; border-color:#dc3545;" onclick="openArchiveTab(this)"><i class="fa-solid fa-trash-can"></i> سلة المحذوفات السري</button>
+            </div>
+
+            <div id="securitySettingsTab" class="settings-tab-content form-card" style="display: none; max-width: 500px; margin: 0 auto;">
+                <h3>تغيير البريد أو كلمة المرور بأمان</h3>
+                <p style="color: #666; margin-bottom: 20px; font-size: 0.9rem; text-align: center;">يرجى إدخال البريد الحالي وكلمة المرور للتحقق:</p>
+                <label>البريد الإلكتروني الحالي:</label><input type="email" id="secEmail" placeholder="admin@visora.com">
+                <label>كلمة المرور الحالية:</label><input type="password" id="secOldPassword" placeholder="الباسورد الحالي">
+                <label>البريد الإلكتروني الجديد (اختياري):</label><input type="email" id="secNewEmail" placeholder="new@visora.com">
+                <label>كلمة المرور الجديدة (اختياري - 6 أحرف على الأقل):</label><input type="password" id="secNewPassword" placeholder="الباسورد الجديد">
+                <button onclick="secureUpdateCredentials()" style="background: #6a0dad; margin-top: 10px;">حفظ التعديلات بأمان</button>
+            </div>
+
+            <div id="embassySettingsTab" class="settings-tab-content form-card" style="display: none; max-width: 600px; margin: 0 auto;">
+                <h3>إدارة قائمة السفارات المتاحة</h3>
+                <div style="display: flex; gap: 10px; margin-bottom: 20px;" class="hide-in-preview">
+                    <input type="text" id="newEmbassyNameInput" placeholder="أدخلي اسم السفارة الجديدة..." style="margin-bottom: 0;">
+                    <button onclick="addNewEmbassyMaster()" style="max-width: 150px; background: #198754;"><i class="fa-solid fa-plus"></i> إضافة سفارة</button>
+                </div>
+                <div id="embassiesMasterListContainer" class="cards-grid"></div>
+            </div>
+
+            <div id="backupSettingsTab" class="settings-tab-content form-card" style="display: none; text-align: center; max-width: 500px; margin: 0 auto;">
+                <i class="fa-solid fa-file-shield" style="font-size: 3.5rem; color: #198754; margin-bottom: 15px;"></i>
+                <h3 style="color: #333; margin-bottom: 10px;">تحميل نسخة احتياطية من البيانات</h3>
+                <p style="color: #666; font-size: 0.9rem; margin-bottom: 20px;">يمكنك تحميل ملف نسخة احتياطية (JSON Backup) يحتوي على كافة العملاء والحسابات لحفظه على جهازك الشخصي.</p>
+                <button onclick="downloadJsonBackup()" style="background: #198754;"><i class="fa-solid fa-download"></i> تحميل النسخة الاحتياطية الآن</button>
+            </div>
+
+            <!-- الأرشيف السري -->
+            <div id="archiveSettingsTab" class="settings-tab-content form-card" style="display: none;">
+                <h3 style="color: #dc3545;"><i class="fa-solid fa-trash-can"></i> الأرشيف السري وسلة المحذوفات</h3>
+                <p style="text-align: center; color: #666; font-size: 0.9rem; margin-bottom: 20px;">
+                    الملفات هنا يتم حذفها نهائياً بشكل أوتوماتيكي بعد مرور 30 يوماً من تاريخ حذفها.
+                </p>
+                <div id="archiveListContainer" class="cards-grid">
+                    <p style="text-align:center; color:#888; padding:30px;">جاري تحميل المحذوفات...</p>
+                </div>
+            </div>
+
+        </main>
+        <nav class="bottom-nav">
+            <div class="nav-item" onclick="showPage('homePage')"><i class="fa-solid fa-house"></i><span>الرئيسية</span></div>
+            <div class="nav-item" onclick="toggleSidebar()"><i class="fa-solid fa-bars"></i><span>القائمة</span></div>
+        </nav>
+    </div>
+
+    <!-- JS Logic -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, updateDoc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getAuth, signInWithEmailAndPassword, updatePassword, updateEmail, EmailAuthProvider, reauthenticateWithCredential, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDn8H3ek1DLJN8rgN3vHG8_qDkcUOAEbMM",
+            authDomain: "visora-travel.firebaseapp.com",
+            projectId: "visora-travel",
+            storageBucket: "visora-travel.firebasestorage.app",
+            messagingSenderId: "254380275547",
+            appId: "1:254380275547:web:1df16ebc9d3cd1d957cc7e"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        window.db = db;
+        const auth = getAuth(app);
+
+        let activeClientFilter = null; 
+        let currentUserEmail = '';
+        let pendingPaymentClientId = null;
+        let embassyChartInstance = null;
+        let salesChartInstance = null;
+
+        window.showToast = function(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            const icon = type === 'success' ? '<i class="fa-solid fa-circle-check success-icon"></i>' : '<i class="fa-solid fa-circle-xmark error-icon"></i>';
+            toast.innerHTML = `${icon} <span>${message}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.style.animation = 'slideOutRight 0.4s forwards';
+                setTimeout(() => toast.remove(), 400);
+            }, 3000);
+        };
+
+        window.showConfirm = function(message) {
+            return new Promise((resolve) => {
+                const modal = document.getElementById('customConfirm');
+                const msgEl = document.getElementById('confirmMessage');
+                const btnYes = document.getElementById('confirmYes');
+                const btnNo = document.getElementById('confirmNo');
+
+                msgEl.innerText = message;
+                modal.style.display = 'flex';
+
+                const handleYes = () => { cleanup(); resolve(true); };
+                const handleNo = () => { cleanup(); resolve(false); };
+
+                const cleanup = () => {
+                    modal.style.display = 'none';
+                    btnYes.removeEventListener('click', handleYes);
+                    btnNo.removeEventListener('click', handleNo);
+                };
+
+                btnYes.addEventListener('click', handleYes);
+                btnNo.addEventListener('click', handleNo);
+            });
+        };
+
+        // 🌟 التفرقة الواضحة بين الأدمن (تحكم كامل) والمانجر (معاينة فقط)
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                currentUserEmail = (user.email || '').toLowerCase();
+                document.body.classList.remove('is-admin', 'is-preview');
+                
+                const badge = document.getElementById('headerRoleBadge');
+                if (currentUserEmail.includes('manager')) {
+                    // وضع المعاينة للمدير
+                    document.body.classList.add('is-preview');
+                    if(badge) {
+                        badge.innerHTML = '<i class="fa-solid fa-eye"></i> وضع المعاينة (المدير)';
+                        badge.style.background = '#d4af37';
+                    }
+                } else {
+                    // وضع الأدمن (تحكم كامل)
+                    document.body.classList.add('is-admin');
+                    if(badge) {
+                        badge.innerHTML = '<i class="fa-solid fa-shield-halved"></i> الأدمن (تحكم كامل)';
+                        badge.style.background = '#198754';
+                    }
+                }
+                showPage('homePage');
+            } else {
+                currentUserEmail = '';
+                document.body.classList.remove('is-admin', 'is-preview');
+                showPage('loginPage');
+            }
+        });
+
+        // 🔴 دالة الخروج المباشر المضمونة
+        window.secureLogout = async function() {
+            try {
+                await signOut(auth);
+                currentUserEmail = '';
+                document.body.classList.remove('is-admin', 'is-preview');
+                document.getElementById('username').value = '';
+                document.getElementById('password').value = '';
+                showPage('loginPage');
+                showToast("تم تسجيل الخروج بنجاح.");
+            } catch(e) { 
+                console.error("Logout error:", e); 
+                currentUserEmail = '';
+                document.body.classList.remove('is-admin', 'is-preview');
+                showPage('loginPage');
+            }
+        };
+
+        function getLocalDateStr() { return new Date().toLocaleDateString('en-CA'); }
+
+        window.calculateRemainingInForm = function() {
+            const total = parseNum(document.getElementById("cTotalAmount").value);
+            const paid = parseNum(document.getElementById("cPaid").value);
+            const remaining = total - paid;
+            document.getElementById("cRemaining").value = remaining >= 0 ? remaining.toLocaleString('en-US') : 0;
+        };
+
+        document.addEventListener('input', function(e) {
+            if (e.target.classList.contains('format-num')) {
+                let val = e.target.value.replace(/,/g, '').replace(/[^0-9.]/g, '');
+                if (val !== '') {
+                    let parts = val.split('.');
+                    parts[0] = parseInt(parts[0], 10).toLocaleString('en-US');
+                    e.target.value = parts.join('.');
+                } else {
+                    e.target.value = '';
+                }
+            }
+        });
+
+        function parseNum(val) {
+            if(!val) return 0;
+            return parseFloat(val.toString().replace(/,/g, '')) || 0;
+        }
+
+        const daysAr = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
+        const now = new Date();
+        const dayName = daysAr[now.getDay()];
+        const dateEnNumbers = now.toLocaleDateString('en-GB'); 
+        document.getElementById("currentDateDisplay").innerText = `${dayName}، ${dateEnNumbers}`;
+
+        document.getElementById("cDate").value = getLocalDateStr();
+        document.getElementById("generalExpDate").value = getLocalDateStr();
+        
+        const firstDayOfMonth = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-01';
+        document.getElementById("customDateFrom").value = firstDayOfMonth;
+        document.getElementById("customDateTo").value = getLocalDateStr();
+
+        const currentMonthVal = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+        document.getElementById("reportMonthInput").value = currentMonthVal;
+        document.getElementById("clientFilterMonth").value = currentMonthVal;
+        document.getElementById("expenseFilterMonth").value = currentMonthVal;
+
+        window.toggleSidebar = function() {
+            document.getElementById('sidebar').classList.toggle('active');
+            document.getElementById('sidebarOverlay').classList.toggle('active');
+        };
+
+        window.showPage = function(pageId) {
+            document.querySelectorAll('.page-section').forEach(page => {
+                page.classList.remove('active');
+                if(page.id === 'loginPage') page.classList.add('hidden'); 
+            });
+            const targetPage = document.getElementById(pageId);
+            if(targetPage) {
+                targetPage.classList.remove('hidden');
+                targetPage.classList.add('active');
+            }
+            window.scrollTo(0, 0);
+
+            document.querySelectorAll('.client-tab-content, .emp-tab-content, .exp-tab-content').forEach(el => el.style.display = 'none');
+            document.getElementById("reportContainerWrapper").style.display = 'none';
+            document.getElementById("periodFilterBox").style.display = 'none'; 
+            
+            if(pageId === 'homePage') calculateDailyStats();
+            if(pageId === 'clientsPage') { loadSalesRepsTabs(); loadEmbassiesDropdown(); loadClients(true); }
+        };
+
+        window.toggleClientForm = function() {
+            const el = document.getElementById("addClientSection");
+            el.style.display = (el.style.display === "none" || !el.style.display) ? "block" : "none";
+            if(el.style.display === "block") {
+                loadSalesRepsIntoDropdown();
+                loadEmbassiesDropdown();
+            }
+        };
+
+        window.toggleEmpForm = function() {
+            const el = document.getElementById("addEmpSection");
+            el.style.display = (el.style.display === "none" || !el.style.display) ? "block" : "none";
+        };
+
+        window.toggleExpenseForm = function() {
+            const el = document.getElementById("addExpenseSection");
+            el.style.display = (el.style.display === "none" || !el.style.display) ? "block" : "none";
+        };
+
+        function resetPeriodBox() {
+            document.getElementById("customDateFrom").value = firstDayOfMonth;
+            document.getElementById("customDateTo").value = getLocalDateStr();
+            document.getElementById("customRevenueVal").innerText = "0 ج.م";
+            document.getElementById("customExpensesVal").innerText = "0 ج.م";
+            document.getElementById("customProfitVal").innerText = "0 ج.م";
+        }
+
+        window.togglePeriodFilter = function(e) {
+            if(e) e.stopPropagation();
+            const box = document.getElementById("periodFilterBox");
+            box.style.display = (box.style.display === "none") ? "block" : "none";
+            if(box.style.display === "none") resetPeriodBox();
+        };
+
+        window.switchReportTab = function(tabId, btnElement) {
+            document.querySelectorAll('#reportsPage .report-tab-content').forEach(el => el.style.display = 'none');
+            document.querySelectorAll('#reportsPage .tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(tabId).style.display = 'block';
+            btnElement.classList.add('active');
+        };
+
+        window.switchSettingsTab = function(tabId, btnElement) {
+            document.querySelectorAll('.settings-tab-content').forEach(el => el.style.display = 'none');
+            document.querySelectorAll('#settingsPage .tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(tabId).style.display = 'block';
+            btnElement.classList.add('active');
+        };
+
+        // --- نظام الأرشيف ---
+        window.openArchiveTab = async function(btn) {
+            const pass = prompt("أدخلي الرقم السري للأرشيف (للحماية):");
+            if(pass !== "1234") { 
+                showToast("الرقم السري غير صحيح!", "error");
+                return;
+            }
+            switchSettingsTab('archiveSettingsTab', btn);
+            await loadArchive();
+        };
+
+        window.loadArchive = async function() {
+            const container = document.getElementById("archiveListContainer");
+            container.innerHTML = "<p style='text-align:center;'>جاري فحص وتحديث الأرشيف...</p>";
+            
+            let htmlContent = "";
+            const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000;
+            const now = Date.now();
+            let count = 0;
+
+            async function fetchAndClean(collectionName, typeName, icon) {
+                const snap = await getDocs(collection(db, collectionName));
+                for (let docSnap of snap.docs) {
+                    const data = docSnap.data();
+                    if(data.isDeleted) {
+                        const delDateMs = new Date(data.deletedAt).getTime();
+                        if (now - delDateMs > thirtyDaysMs) {
+                            await deleteDoc(doc(db, collectionName, docSnap.id));
+                            continue;
+                        }
+                        count++;
+                        const nameToDisplay = data.clientName || data.name || data.title || 'بدون اسم';
+                        const infoToDisplay = data.paid ? `المدفوع: ${data.paid}` : (data.amount ? `المبلغ: ${data.amount}` : '');
+                        
+                        htmlContent += `
+                            <div class="list-row" style="border-right-color:#dc3545; background:#fff5f5;">
+                                <div style="flex:2;">
+                                    <h4 style="color:#dc3545; margin-bottom:5px;"><i class="${icon}"></i> [${typeName}] ${nameToDisplay}</h4>
+                                    <span style="font-size:0.85rem; color:#666;">تاريخ الحذف: ${new Date(data.deletedAt).toLocaleDateString('ar-EG')}</span><br>
+                                    <span style="font-size:0.8rem; color:#888;">بواسطة: ${data.deletedBy || 'مجهول'}</span>
+                                </div>
+                                <div style="flex:1; color:#555; font-weight:bold;">${infoToDisplay}</div>
+                                <div style="display:flex; gap:10px;" class="hide-in-preview">
+                                    <button class="add-payment-btn" onclick="restoreArchiveItem('${collectionName}', '${docSnap.id}')"><i class="fa-solid fa-rotate-left"></i> استعادة</button>
+                                    <button class="delete-btn" onclick="hardDeleteArchiveItem('${collectionName}', '${docSnap.id}')"><i class="fa-solid fa-trash"></i> نهائي</button>
+                                </div>
+                            </div>
+                        `;
+                    }
+                }
+            }
+
+            try {
+                await fetchAndClean("clients", "عميل", "fa-solid fa-user");
+                await fetchAndClean("employees", "موظف", "fa-solid fa-user-tie");
+                await fetchAndClean("general_expenses", "مصروف", "fa-solid fa-wallet");
+
+                if(count === 0) {
+                    container.innerHTML = "<p style='text-align:center; color:#888; padding:30px;'>الأرشيف فارغ حالياً.</p>";
+                } else {
+                    container.innerHTML = htmlContent;
+                }
+            } catch(e) {
+                console.error(e);
+                container.innerHTML = "<p style='color:red; text-align:center;'>حدث خطأ في تحميل الأرشيف.</p>";
+            }
+        };
+
+        window.restoreArchiveItem = async function(colName, id) {
+            if(await showConfirm("هل أنتِ متأكدة من استعادة هذا العنصر ورجوعه للوحة العمل؟")) {
+                try {
+                    await updateDoc(doc(window.db, colName, id), { isDeleted: false });
+                    showToast("تمت الاستعادة بنجاح!");
+                    loadArchive();
+                } catch(e) { console.error(e); showToast("خطأ في الاستعادة", "error"); }
+            }
+        };
+
+        window.hardDeleteArchiveItem = async function(colName, id) {
+            if(await showConfirm("تحذير: سيتم حذف العنصر نهائياً ولن تتمكني من استعادته. هل توافقين؟")) {
+                try {
+                    await deleteDoc(doc(window.db, colName, id));
+                    showToast("تم الحذف النهائي بنجاح!");
+                    loadArchive();
+                } catch(e) { console.error(e); showToast("خطأ في الحذف", "error"); }
+            }
+        };
+
+        window.loadSalesRepsIntoDropdown = async function() {
+            const dropdown = document.getElementById("cSalesRep");
+            if(!dropdown) return;
+            const currentValue = dropdown.value; 
+            dropdown.innerHTML = '<option value="">-- اختاري --</option>'; 
+            try {
+                const snap = await getDocs(collection(db, "employees"));
+                snap.forEach(docSnap => {
+                    const emp = docSnap.data();
+                    if(emp.isDeleted) return; 
+                    if(emp.role && (emp.role.includes("سيلز") || emp.role.includes("مبيعات"))) {
+                        const option = document.createElement("option");
+                        option.value = emp.name;
+                        option.text = emp.name;
+                        dropdown.appendChild(option);
+                    }
+                });
+                if(currentValue) dropdown.value = currentValue;
+            } catch(e) { console.error(e); }
+        };
+
+        async function loadEmbassiesDropdown() {
+            const dropdown = document.getElementById("cEmbassy");
+            if(!dropdown) return;
+            const curr = dropdown.value;
+            dropdown.innerHTML = '<option value="">-- اختاري --</option>';
+            try {
+                const snap = await getDocs(collection(db, "embassies"));
+                snap.forEach(docSnap => {
+                    const emb = docSnap.data();
+                    const option = document.createElement("option");
+                    option.value = emb.name;
+                    option.text = emb.name;
+                    dropdown.appendChild(option);
+                });
+                const optNew = document.createElement("option");
+                optNew.value = "new";
+                optNew.style.color = "#6a0dad";
+                optNew.style.fontWeight = "bold";
+                optNew.text = "+ إضافة سفارة جديدة...";
+                dropdown.appendChild(optNew);
+                if(curr) dropdown.value = curr;
+            } catch(e) { console.error(e); }
+        }
+
+        async function loadSalesRepsTabs() {
+            const container = document.getElementById("salesRepsTabContainer");
+            try {
+                const snap = await getDocs(collection(db, "employees"));
+                let salesList = [];
+                snap.forEach(docSnap => {
+                    const emp = docSnap.data();
+                    if(emp.isDeleted) return; 
+                    if(emp.role && (emp.role.includes("سيلز") || emp.role.includes("مبيعات"))) {
+                        salesList.push(emp.name);
+                    }
+                });
+
+                container.innerHTML = `
+                    <button class="tab-btn ${activeClientFilter === 'all' || !activeClientFilter ? 'active' : ''}" onclick="switchClientFilter('all', this)"><i class="fa-solid fa-users"></i> كل العملاء</button>
+                    <button class="tab-btn" style="border-color: #dc3545; color: #dc3545;" onclick="switchClientFilter('due', this)"><i class="fa-solid fa-circle-exclamation"></i> 🔴 الآجل / متبقي فلوس</button>
+                `;
+
+                salesList.forEach(name => {
+                    const btn = document.createElement("button");
+                    btn.className = `tab-btn ${activeClientFilter === name ? 'active' : ''}`;
+                    btn.innerHTML = `<i class="fa-solid fa-user-tag"></i> ${name}`;
+                    btn.onclick = (e) => switchClientFilter(name, btn);
+                    container.appendChild(btn);
+                });
+            } catch(e) { console.error(e); }
+        }
+
+        window.switchClientFilter = function(filter, btn) {
+            activeClientFilter = filter;
+            document.querySelectorAll("#salesRepsTabContainer .tab-btn").forEach(b => b.classList.remove("active"));
+            btn.classList.add("active");
+            loadClients(true);
+        };
+
+        window.triggerClientSearch = function() {
+            loadClients(true);
+        };
+
+        function setupDynamicSelect(selectId, promptMessage) {
+            const selectEl = document.getElementById(selectId);
+            if (selectEl) {
+                selectEl.addEventListener('change', async function() {
+                    if (this.value === 'new') {
+                        const newValue = prompt(promptMessage);
+                        if (newValue && newValue.trim() !== "") {
+                            await addDoc(collection(db, "embassies"), { name: newValue.trim() });
+                            await loadEmbassiesDropdown();
+                            this.value = newValue.trim();
+                        } else { this.value = ""; }
+                    }
+                });
+            }
+        }
+        setupDynamicSelect('cEmbassy', 'أدخلي اسم السفارة الجديدة:');
+
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault(); 
+            const email = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value;
+            const loginBtn = document.getElementById('loginBtn');
+            loginBtn.innerText = "جاري التحقق..."; loginBtn.style.opacity = "0.7"; loginBtn.disabled = true;
+
+            signInWithEmailAndPassword(auth, email, password)
+                .then(() => {
+                    loginBtn.innerText = "تسجيل الدخول"; loginBtn.style.opacity = "1"; loginBtn.disabled = false;
+                })
+                .catch((error) => {
+                    console.error("Login error:", error);
+                    showToast("بيانات الدخول غير صحيحة!", "error");
+                    loginBtn.innerText = "تسجيل الدخول"; loginBtn.style.opacity = "1"; loginBtn.disabled = false;
+                });
+        });
+
+        async function calculateDailyStats() {
+            const todayDateStr = getLocalDateStr();
+            try {
+                const clientsSnap = await getDocs(collection(db, "clients"));
+                let dailyRev = 0; let dailyFileExp = 0; let totalRemainingDebt = 0;
+
+                clientsSnap.forEach(docSnap => {
+                    const data = docSnap.data();
+                    if(data.isDeleted) return; 
+                    
+                    if(data.paymentsLog && Array.isArray(data.paymentsLog)) {
+                        data.paymentsLog.forEach(p => {
+                            if(p.date === todayDateStr) dailyRev += parseNum(p.amount);
+                        });
+                    } else if(data.date === todayDateStr) {
+                        dailyRev += parseNum(data.paid);
+                    }
+
+                    if(data.date === todayDateStr) {
+                        dailyFileExp += parseNum(data.totalExpenses);
+                    }
+
+                    totalRemainingDebt += parseNum(data.remaining);
+                });
+
+                const genExpSnap = await getDocs(collection(db, "general_expenses"));
+                let dailyGenExp = 0;
+                genExpSnap.forEach(docSnap => {
+                    const exp = docSnap.data();
+                    if(exp.isDeleted) return; 
+                    if(exp.date === todayDateStr) {
+                        dailyGenExp += parseNum(exp.amount);
+                    }
+                });
+
+                const totalDailyExp = dailyFileExp + dailyGenExp;
+                const dailyProfit = dailyRev - totalDailyExp;
+
+                document.getElementById("dailyRevenueVal").innerText = Math.round(dailyRev).toLocaleString('en-US') + " ج.م";
+                document.getElementById("dailyExpensesVal").innerText = Math.round(totalDailyExp).toLocaleString('en-US') + " ج.م";
+                document.getElementById("dailyProfitVal").innerText = Math.round(dailyProfit).toLocaleString('en-US') + " ج.م";
+                document.getElementById("totalRemainingDebtVal").innerText = Math.round(totalRemainingDebt).toLocaleString('en-US') + " ج.م";
+            } catch(e) { console.error(e); }
+        }
+
+        window.calculateCustomPeriodStats = async function() {
+            const dateFrom = document.getElementById("customDateFrom").value;
+            const dateTo = document.getElementById("customDateTo").value;
+            if(!dateFrom || !dateTo) { showToast("حدد الفترة الزمنية أولاً!", "error"); return; }
+
+            try {
+                const clientsSnap = await getDocs(collection(db, "clients"));
+                let rev = 0; let fileExp = 0;
+
+                clientsSnap.forEach(docSnap => {
+                    const data = docSnap.data();
+                    if(data.isDeleted) return; 
+                    
+                    if(data.paymentsLog && Array.isArray(data.paymentsLog)) {
+                        data.paymentsLog.forEach(p => {
+                            if(p.date >= dateFrom && p.date <= dateTo) rev += parseNum(p.amount);
+                        });
+                    } else if(data.date && data.date >= dateFrom && data.date <= dateTo) {
+                        rev += parseNum(data.paid);
+                    }
+
+                    if(data.date && data.date >= dateFrom && data.date <= dateTo) {
+                        fileExp += parseNum(data.totalExpenses);
+                    }
+                });
+
+                const genExpSnap = await getDocs(collection(db, "general_expenses"));
+                let genExp = 0;
+                genExpSnap.forEach(docSnap => {
+                    const exp = docSnap.data();
+                    if(exp.isDeleted) return; 
+                    if(exp.date && exp.date >= dateFrom && exp.date <= dateTo) {
+                        genExp += parseNum(exp.amount);
+                    }
+                });
+
+                const totalExp = fileExp + genExp;
+                const profit = rev - totalExp;
+
+                document.getElementById("customRevenueVal").innerText = Math.round(rev).toLocaleString('en-US') + " ج.م";
+                document.getElementById("customExpensesVal").innerText = Math.round(totalExp).toLocaleString('en-US') + " ج.م";
+                document.getElementById("customProfitVal").innerText = Math.round(profit).toLocaleString('en-US') + " ج.م";
+            } catch(e) { console.error(e); }
+        }
+
+        let editingClientId = null;
+        let existingPaymentsLog = [];
+
+        document.getElementById("clientSaveBtn").addEventListener("click", async () => {
+            const btn = document.getElementById("clientSaveBtn");
+            const cName = document.getElementById("cName").value;
+            if(!cName || !document.getElementById("cSalesRep").value) { showToast("برجاء إدخال اسم العميل واختيار السيلز!", "error"); return; }
+
+            btn.innerText = "جاري الحفظ...";
+            const expensesFields = ['eAppt', 'eInvite', 'eTrans', 'eShip', 'eFlight', 'ePrint', 'eOther'];
+            let totalExpenses = 0; const expensesDetails = {};
+            expensesFields.forEach(field => {
+                const val = parseNum(document.getElementById(field).value);
+                expensesDetails[field] = val; totalExpenses += val;
+            });
+
+            const totalAmount = parseNum(document.getElementById("cTotalAmount").value);
+            const paid = parseNum(document.getElementById("cPaid").value);
+            const remaining = totalAmount - paid;
+            const netProfit = paid - totalExpenses;
+            const fileDate = document.getElementById("cDate").value;
+
+            let paymentsLog = editingClientId ? existingPaymentsLog : [{ date: fileDate, amount: paid, note: 'الدفعة الأولى' }];
+
+            const clientData = {
+                date: fileDate, 
+                salesRep: document.getElementById("cSalesRep").value,
+                clientName: cName, 
+                phone: document.getElementById("cPhone").value.trim(),
+                embassy: document.getElementById("cEmbassy").value, 
+                visaType: document.getElementById("cVisaType").value,
+                totalAmount: totalAmount,
+                paid: paid, 
+                remaining: remaining >= 0 ? remaining : 0,
+                expenses: expensesDetails, 
+                totalExpenses: totalExpenses, 
+                netProfit: netProfit, 
+                notes: document.getElementById("cNotes").value,
+                paymentsLog: paymentsLog,
+                createdAt: Date.now()
+            };
+
+            try {
+                if(editingClientId) { await updateDoc(doc(db, "clients", editingClientId), clientData); showToast("تم تعديل البيانات بنجاح!"); } 
+                else { await addDoc(collection(db, "clients"), clientData); showToast("تم حفظ ملف العميل بنجاح."); }
+                resetClientForm(); loadClients(true); 
+                calculateDailyStats();
+            } catch (error) { console.error(error); showToast("حصلت مشكلة في الحفظ.", "error"); }
+            btn.innerText = "حفظ الملف";
+        });
+
+        function resetClientForm() {
+            editingClientId = null;
+            existingPaymentsLog = [];
+            document.getElementById("cName").value = ""; 
+            document.getElementById("cPhone").value = ""; 
+            document.getElementById("cTotalAmount").value = ""; 
+            document.getElementById("cPaid").value = ""; 
+            document.getElementById("cRemaining").value = ""; 
+            document.getElementById("cNotes").value = "";
+            document.getElementById("cSalesRep").value = "";
+            document.getElementById("cEmbassy").value = "";
+            document.getElementById("cVisaType").value = "سياحة";
+            document.getElementById("cDate").value = getLocalDateStr();
+            document.querySelectorAll(".c-expense").forEach(el => el.value = "");
+            document.getElementById("clientFormTitle").innerText = "إضافة ملف جديد";
+            document.getElementById("clientCancelBtn").style.display = "none"; 
+            document.getElementById("clientSaveBtn").innerText = "حفظ الملف";
+            document.getElementById("addClientSection").style.display = "none";
+        }
+        document.getElementById("clientCancelBtn").addEventListener("click", resetClientForm);
+
+        window.loadClients = async function(forceShow = false) {
+            const container = document.getElementById("clientsListContainer");
+            if(!forceShow) return; 
+
+            const filterMonth = document.getElementById("clientFilterMonth").value;
+            const searchQuery = document.getElementById("clientSearchInput").value.trim().toLowerCase();
+
+            container.innerHTML = "<p style='text-align:center;'>جاري تحميل البيانات...</p>";
+            try {
+                const querySnapshot = await getDocs(collection(db, "clients"));
+                container.innerHTML = ""; 
+                let clientsArray = [];
+                let totalActiveClients = 0; 
+                
+                querySnapshot.forEach((docSnap) => {
+                    const data = docSnap.data(); 
+                    if(data.isDeleted) return; 
+                    
+                    totalActiveClients++;
+                    data.id = docSnap.id;
+
+                    const matchMonth = !filterMonth || (data.date && data.date.startsWith(filterMonth));
+                    const matchSearch = !searchQuery || data.clientName.toLowerCase().includes(searchQuery) || (data.phone && data.phone.includes(searchQuery));
+                    
+                    let matchTab = true;
+                    if(!activeClientFilter || activeClientFilter === 'all') { 
+                        matchTab = true;
+                    } else if(activeClientFilter === 'due') {
+                        matchTab = parseNum(data.remaining) > 0;
+                    } else {
+                        matchTab = data.salesRep === activeClientFilter;
+                    }
+
+                    if(matchMonth && matchSearch && matchTab) {
+                        clientsArray.push(data);
+                    }
+                });
+
+                clientsArray.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+                document.getElementById("clientsCountBadge").innerText = totalActiveClients;
+
+                if(clientsArray.length === 0) { 
+                    container.innerHTML = "<p style='text-align:center;'>لا يوجد عملاء مطابقين للبحث أو الفلتر الحالي.</p>"; 
+                    return;
+                }
+
+                clientsArray.forEach((data) => {
+                    const card = document.createElement("div"); card.className = "list-row";
+                    const hasRemaining = parseNum(data.remaining) > 0;
+                    const statusBadge = hasRemaining ? `<span style="background:#dc3545; color:white; padding:2px 8px; border-radius:10px; font-size:0.75rem;">آجل: ${Math.round(data.remaining).toLocaleString('en-US')} ج.م</span>` : `<span style="background:#198754; color:white; padding:2px 8px; border-radius:10px; font-size:0.75rem;">مكتمل السداد 🟢</span>`;
+
+                    let paymentsHTML = '';
+                    if(data.paymentsLog && Array.isArray(data.paymentsLog) && data.paymentsLog.length > 0) {
+                        paymentsHTML = `<div style="width: 100%; background: #fafafa; padding: 10px; border-radius: 8px; margin-top: 10px; font-size: 0.85rem; border: 1px solid #eee;">
+                            <strong style="color: #6a0dad;"><i class="fa-solid fa-receipt"></i> سجل الدفعات بالكامل:</strong>
+                            <ul style="margin-right: 20px; color: #444; margin-top: 5px;">
+                                ${data.paymentsLog.map(p => `<li>بتاريخ <strong>${p.date}</strong>: تم دفع <strong style="color: #198754;">${Math.round(p.amount).toLocaleString('en-US')} ج.م</strong> (${p.note || 'دفعة تحصيل'})</li>`).join('')}
+                            </ul>
+                        </div>`;
+                    }
+
+                    card.innerHTML = `
+                        <div style="flex: 2; min-width: 200px;">
+                            <h4 style="color: #6a0dad; margin-bottom: 5px;"><i class="fa-solid fa-folder-open"></i> ${data.clientName} ${statusBadge}</h4>
+                            <span style="font-size: 0.85rem; color: #666;"><i class="fa-solid fa-calendar"></i> تاريخ الملف: ${data.date}</span>
+                            ${data.phone ? `<div style="font-size: 0.85rem; color: #444; margin-top:3px;"><i class="fa-solid fa-phone"></i> ${data.phone}</div>` : ''}
+                        </div>
+                        <div style="flex: 2; min-width: 150px; font-size: 0.95rem; line-height: 1.6; color: #444;">
+                            <strong>السيلز:</strong> <span style="color: #6a0dad; font-weight: bold;">${data.salesRep}</span><br>
+                            <strong>السفارة:</strong> ${data.embassy || 'غير محدد'}<br>
+                            <strong>التأشيرة:</strong> ${data.visaType || 'غير محدد'}
+                        </div>
+                        <div style="flex: 2; min-width: 200px; background: #f0e6fa; padding: 12px; border-radius: 8px; text-align: center; border: 1px dashed #6a0dad;">
+                            <div style="font-size: 0.85rem; color: #555; margin-bottom: 3px;">المطلوب: ${Math.round(parseNum(data.totalAmount || data.paid)).toLocaleString('en-US')} | المصاريف: ${Math.round(parseNum(data.totalExpenses)).toLocaleString('en-US')}</div>
+                            <div style="font-size: 0.85rem; color: #198754; font-weight: bold;">إجمالي المدفوع: ${Math.round(parseNum(data.paid)).toLocaleString('en-US')} ج.م</div>
+                            <strong style="color: ${hasRemaining ? '#dc3545' : '#198754'}; font-size: 1.05rem;">المتبقي: ${Math.round(parseNum(data.remaining)).toLocaleString('en-US')} ج.م</strong>
+                        </div>
+                        <div style="display: flex; gap: 8px; flex-direction: column; justify-content: center;">
+                            ${hasRemaining ? `<button class="add-payment-btn" onclick="addNewPaymentPrompt('${data.id}', '${data.clientName}', ${data.remaining})"><i class="fa-solid fa-plus"></i> تحصيل دفعة</button>` : ''}
+                            ${hasRemaining && data.phone ? `<button class="whatsapp-btn" onclick="openWhatsAppReminder('${data.phone}', '${data.clientName}', ${data.remaining}, '${data.embassy}')"><i class="fa-brands fa-whatsapp"></i> تذكير الواتساب</button>` : ''}
+                            <button class="edit-btn" onclick="editClient('${data.id}', event)"><i class="fa-solid fa-pen"></i> تعديل</button>
+                            <button class="delete-btn" onclick="deleteClient('${data.id}')"><i class="fa-solid fa-trash"></i> مسح</button>
+                        </div>
+                        ${paymentsHTML}
+                    `;
+                    card.dataset.fullInfo = JSON.stringify(data);
+                    container.appendChild(card);
+                });
+            } catch (error) { console.error(error); container.innerHTML = "<p style='color:red; text-align:center;'>حصل خطأ في التحميل.</p>"; }
+        }
+
+        window.openWhatsAppReminder = function(phone, clientName, remaining, embassy) {
+            if(!phone) { showToast("هذا العميل ليس لديه رقم تليفون مسجل!", "error"); return; }
+            let formattedPhone = phone.replace(/[^0-9]/g, '');
+            if(!formattedPhone.startsWith('20') && formattedPhone.length === 11) {
+                formattedPhone = '20' + formattedPhone; 
+            }
+            const msg = `أهلاً أستاذ ${clientName}، بنفكر حضرتك بمتبقي حساب تأشيرة ${embassy || ''} وقدره ${Math.round(remaining).toLocaleString('en-US')} ج.م لدى Visora Travel. تحياتنا لك!`;
+            const url = `https://wa.me/${formattedPhone}?text=${encodeURIComponent(msg)}`;
+            window.open(url, '_blank');
+        };
+
+        window.addNewPaymentPrompt = function(clientId, clientName, remainingAmount) {
+            pendingPaymentClientId = clientId;
+            document.getElementById("paymentModalClientInfo").innerHTML = `العميل: <strong>${clientName}</strong><br>المتبقي عليه: <strong style="color:#dc3545;">${remainingAmount.toLocaleString('en-US')} ج.م</strong>`;
+            document.getElementById("customPaymentInput").value = "";
+            document.getElementById("paymentModal").style.display = "flex";
+        };
+
+        window.closePaymentModal = function() {
+            document.getElementById("paymentModal").style.display = "none";
+            pendingPaymentClientId = null;
+        };
+
+        document.getElementById("confirmPaymentBtn").addEventListener("click", async () => {
+            if(!pendingPaymentClientId) return;
+            const amountStr = document.getElementById("customPaymentInput").value;
+            const newPayment = parseNum(amountStr);
+            if(newPayment <= 0) { showToast("المبلغ غير صحيح!", "error"); return; }
+
+            try {
+                const clientRef = doc(db, "clients", pendingPaymentClientId);
+                const snap = await getDoc(clientRef);
+                if(snap.exists()) {
+                    const data = snap.data();
+                    const newPaid = parseNum(data.paid) + newPayment;
+                    const newRemaining = parseNum(data.totalAmount) - newPaid;
+                    const todayStr = getLocalDateStr();
+
+                    let paymentsLog = data.paymentsLog || [];
+                    paymentsLog.push({ date: todayStr, amount: newPayment, note: 'دفعة تحصيل جديدة' });
+
+                    await updateDoc(clientRef, {
+                        paid: newPaid,
+                        remaining: newRemaining >= 0 ? newRemaining : 0,
+                        netProfit: newPaid - parseNum(data.totalExpenses),
+                        paymentsLog: paymentsLog
+                    });
+
+                    showToast("تم تسجيل الدفعة بنجاح!");
+                    closePaymentModal();
+                    loadClients(true);
+                    calculateDailyStats();
+                }
+            } catch(e) { console.error(e); showToast("حدث خطأ أثناء تسجيل الدفعة.", "error"); }
+        });
+
+        window.deleteClient = async function(id) {
+            if(await showConfirm("متأكدة إنك عايزة تمسحي العميل ده؟ (سيتم إخفاؤه في الأرشيف السري)")) { 
+                try { 
+                    await updateDoc(doc(db, "clients", id), {
+                        isDeleted: true,
+                        deletedBy: currentUserEmail,
+                        deletedAt: new Date().toISOString()
+                    }); 
+                    showToast("تم نقل العميل للأرشيف السري.");
+                    loadClients(true); 
+                    calculateDailyStats(); 
+                } catch (error) { console.error(error); } 
+            }
+        };
+
+        window.editClient = async function(id, evt) {
+            editingClientId = id;
+            const card = evt.currentTarget.closest('.list-row'); 
+            const data = JSON.parse(card.dataset.fullInfo);
+
+            existingPaymentsLog = data.paymentsLog || [];
+            document.getElementById("cDate").value = data.date; 
+            
+            await loadSalesRepsIntoDropdown();
+            document.getElementById("cSalesRep").value = data.salesRep;
+
+            await loadEmbassiesDropdown();
+            document.getElementById("cEmbassy").value = data.embassy;
+
+            document.getElementById("cName").value = data.clientName; 
+            document.getElementById("cPhone").value = data.phone || '';
+            document.getElementById("cVisaType").value = data.visaType; 
+            document.getElementById("cTotalAmount").value = Number(data.totalAmount || data.paid).toLocaleString('en-US');
+            document.getElementById("cPaid").value = Number(data.paid).toLocaleString('en-US');
+            document.getElementById("cRemaining").value = Number(data.remaining || 0).toLocaleString('en-US');
+            document.getElementById("cNotes").value = data.notes || '';
+            
+            document.querySelectorAll(".c-expense").forEach(el => el.value = "");
+
+            if(data.expenses) {
+                document.getElementById("eAppt").value = data.expenses.eAppt ? Number(data.expenses.eAppt).toLocaleString('en-US') : ""; 
+                document.getElementById("eInvite").value = data.expenses.eInvite ? Number(data.expenses.eInvite).toLocaleString('en-US') : "";
+                document.getElementById("eTrans").value = data.expenses.eTrans ? Number(data.expenses.eTrans).toLocaleString('en-US') : ""; 
+                document.getElementById("eShip").value = data.expenses.eShip ? Number(data.expenses.eShip).toLocaleString('en-US') : "";
+                document.getElementById("eFlight").value = data.expenses.eFlight ? Number(data.expenses.eFlight).toLocaleString('en-US') : ""; 
+                document.getElementById("ePrint").value = data.expenses.ePrint ? Number(data.expenses.ePrint).toLocaleString('en-US') : "";
+                document.getElementById("eOther").value = data.expenses.eOther ? Number(data.expenses.eOther).toLocaleString('en-US') : "";
+            }
+            document.getElementById("clientFormTitle").innerText = "تعديل بيانات: " + data.clientName;
+            document.getElementById("clientSaveBtn").innerText = "تحديث الملف"; document.getElementById("clientCancelBtn").style.display = "inline-block";
+            document.getElementById("addClientSection").style.display = "block";
+            window.scrollTo(0, 0);
+        };
+
+        let editingEmpId = null; 
+        document.getElementById("addEmpBtn").addEventListener("click", async () => {
+            const name = document.getElementById("empName").value;
+            if(!name) { showToast("اكتبي اسم الموظف الأول!", "error"); return; }
+            const salary = parseNum(document.getElementById("empSalary").value);
+            
+            const empData = { name: name, role: document.getElementById("empRole").value, salary: salary, address: document.getElementById("empAddress").value, contact: document.getElementById("empContact").value };
+            try {
+                if (editingEmpId) { await updateDoc(doc(db, "employees", editingEmpId), empData); editingEmpId = null; document.getElementById("empCancelBtn").style.display = "none"; document.getElementById("empFormTitle").innerText = "إضافة موظف جديد"; } 
+                else { await addDoc(collection(db, "employees"), empData); }
+                
+                document.getElementById("empName").value = ""; document.getElementById("empRole").value = ""; document.getElementById("empSalary").value = "";
+                document.getElementById("empAddress").value = ""; document.getElementById("empContact").value = "";
+                document.getElementById("addEmpSection").style.display = "none";
+                
+                showToast("تم الحفظ بنجاح!"); fetchEmployees('sales'); 
+            } catch (error) { console.error(error); showToast("حصلت مشكلة.", "error"); }
+        });
+
+        document.getElementById("empCancelBtn").addEventListener("click", () => {
+            editingEmpId = null;
+            document.getElementById("empName").value = "";
+            document.getElementById("empRole").value = "";
+            document.getElementById("empSalary").value = "";
+            document.getElementById("empAddress").value = "";
+            document.getElementById("empContact").value = "";
+            document.getElementById("empFormTitle").innerText = "إضافة موظف جديد";
+            document.getElementById("empCancelBtn").style.display = "none";
+            document.getElementById("addEmpSection").style.display = "none";
+        });
+
+        window.fetchEmployees = async function(type, btnElement) {
+            if(btnElement) {
+                document.querySelectorAll('#employeesPage .tab-btn').forEach(b => b.classList.remove('active'));
+                btnElement.classList.add('active');
+            }
+            const container = document.getElementById("employeesList");
+            container.innerHTML = "<p style='text-align:center;'>جاري تحميل البيانات...</p>"; 
+            
+            const titleEl = document.getElementById("empListTitle");
+            if(titleEl) {
+                titleEl.innerText = type === 'sales' ? "فريق السيلز" : "باقي فريق العمل";
+            }
+
+            try {
+                const querySnapshot = await getDocs(collection(db, "employees"));
+                let salesCount = 0; let othersCount = 0;
+                container.innerHTML = ""; let hasData = false;
+                querySnapshot.forEach((docSnap) => {
+                    const emp = docSnap.data(); const docId = docSnap.id;
+                    if(emp.isDeleted) return; 
+                    
+                    const isSales = emp.role && (emp.role.includes("سيلز") || emp.role.includes("مبيعات"));
+                    if(isSales) salesCount++; else othersCount++;
+                    if((type === 'sales' && isSales) || (type === 'others' && !isSales)) {
+                        hasData = true;
+                        const card = document.createElement('div'); card.className = 'list-row';
+                        card.dataset.empInfo = JSON.stringify({ id: docId, name: emp.name || '', role: emp.role || '', salary: emp.salary || 0, address: emp.address || '', contact: emp.contact || '' });
+                        const addressHtml = emp.address ? `<div style="font-size:0.85rem; color:#888; margin-top:5px;"><i class="fa-solid fa-location-dot"></i> ${emp.address}</div>` : '';
+                        
+                        card.innerHTML = `
+                            <div style="flex: 2; min-width: 180px;"><h4 style="color: #6a0dad; margin-bottom: 5px;"><i class="fa-solid fa-user"></i> ${emp.name}</h4><span style="background: #f0e6fa; color: #6a0dad; padding: 3px 10px; border-radius: 15px; font-size: 0.85rem; font-weight: bold;">${emp.role || 'غير محدد'}</span></div>
+                            <div style="flex: 1; min-width: 120px; color: #555;"><i class="fa-solid fa-money-bill-wave"></i> <strong>${Math.round(Number(emp.salary || 0)).toLocaleString('en-US')}</strong> ج.م</div>
+                            <div style="flex: 2; min-width: 150px; color: #555;">
+                                <div><i class="fa-solid fa-phone"></i> ${emp.contact || 'بدون رقم'}</div>
+                                ${addressHtml}
+                            </div>
+                            <div style="display: flex; gap: 10px;" class="hide-in-preview">
+                                <button class="edit-btn" onclick="editEmpFromCard(this)"><i class="fa-solid fa-pen"></i></button>
+                                <button class="delete-btn" onclick="deleteEmp('${docId}')"><i class="fa-solid fa-trash"></i></button>
+                            </div>
+                        `;
+                        container.appendChild(card);
+                    }
+                });
+                document.getElementById("salesCountBadge").innerText = salesCount; document.getElementById("othersCountBadge").innerText = othersCount;
+                if(!hasData) container.innerHTML = `<p style='text-align:center; color:#888;'>مفيش بيانات هنا لسه.</p>`;
+            } catch (error) {
+                console.error("Fetch Employees Error:", error);
+                container.innerHTML = "<p style='color:red; text-align:center;'>حصل خطأ في التحميل.</p>";
+            }
+        }
+
+        window.deleteEmp = async function(id) {
+            if(await showConfirm("متأكدة إنك عايزة تمسحي الموظف ده؟")) { 
+                try { 
+                    await updateDoc(doc(db, "employees", id), {
+                        isDeleted: true,
+                        deletedBy: currentUserEmail,
+                        deletedAt: new Date().toISOString()
+                    });
+                    showToast("تم النقل للأرشيف السري.");
+                    fetchEmployees('sales'); 
+                } catch(error) { console.error(error); } 
+            }
+        };
+
+        window.editEmpFromCard = function(btnElement) {
+            const card = btnElement.closest('.list-row');
+            if(!card || !card.dataset.empInfo) return;
+            const emp = JSON.parse(card.dataset.empInfo);
+            
+            editingEmpId = emp.id; 
+            document.getElementById("empName").value = emp.name; 
+            document.getElementById("empRole").value = emp.role; 
+            document.getElementById("empSalary").value = emp.salary ? Number(emp.salary).toLocaleString('en-US') : ''; 
+            document.getElementById("empAddress").value = emp.address; 
+            document.getElementById("empContact").value = emp.contact;
+            document.getElementById("empFormTitle").innerText = "تعديل بيانات الموظف"; 
+            document.getElementById("empCancelBtn").style.display = "inline-block"; 
+            document.getElementById("addEmpSection").style.display = "block";
+            window.scrollTo(0, 0);
+        };
+
+        let editingExpId = null;
+        document.getElementById("saveGeneralExpBtn").addEventListener("click", async () => {
+            const title = document.getElementById("generalExpTitle").value;
+            const amount = parseNum(document.getElementById("generalExpAmount").value);
+            const date = document.getElementById("generalExpDate").value;
+            if(!title || amount <= 0) { showToast("اكتبي بند المصروف والمبلغ!", "error"); return; }
+            
+            const expData = { title, amount, date };
+            try {
+                if(editingExpId) {
+                    await updateDoc(doc(db, "general_expenses", editingExpId), expData);
+                    showToast("تم تحديث المصروف بنجاح!");
+                    editingExpId = null;
+                    document.getElementById("expCancelBtn").style.display = "none";
+                    document.getElementById("expFormTitle").innerText = "تسجيل مصروف عام جديد";
+                } else {
+                    await addDoc(collection(db, "general_expenses"), expData);
+                    showToast("تم تسجيل المصروف بنجاح!");
+                }
+                
+                document.getElementById("generalExpTitle").value = ""; document.getElementById("generalExpAmount").value = ""; document.getElementById("generalExpDate").value = getLocalDateStr();
+                document.getElementById("addExpenseSection").style.display = "none";
+                loadGeneralExpenses(document.getElementById("loadExpBtn"));
+                calculateDailyStats();
+            } catch(e) { console.error(e); showToast("حصل خطأ في حفظ المصروف.", "error"); }
+        });
+
+        window.loadGeneralExpenses = async function(btnElement) {
+            if(btnElement) {
+                document.querySelectorAll('#expensesPage .tab-btn').forEach(b => b.classList.remove('active'));
+                btnElement.classList.add('active');
+            }
+            const container = document.getElementById("expensesListContainer");
+            const filterMonth = document.getElementById("expenseFilterMonth").value;
+            container.innerHTML = "<p style='text-align:center;'>جاري تحميل المصاريف...</p>";
+            try {
+                const querySnapshot = await getDocs(collection(db, "general_expenses"));
+                container.innerHTML = "";
+                let expList = [];
+                
+                querySnapshot.forEach(docSnap => {
+                    let data = docSnap.data();
+                    if(data.isDeleted) return; 
+                    
+                    if(!filterMonth || (data.date && data.date.startsWith(filterMonth))) {
+                        data.id = docSnap.id;
+                        expList.push(data);
+                    }
+                });
+                
+                document.getElementById("expensesCountBadge").innerText = expList.length;
+                if(expList.length === 0) { container.innerHTML = "<p style='text-align:center; color:#888;'>مفيش مصاريف مسجلة في هذا الشهر.</p>"; return; }
+                
+                expList.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+                expList.forEach(exp => {
+                    const card = document.createElement("div");
+                    card.className = "list-row";
+                    card.innerHTML = `
+                        <div style="flex: 2; min-width: 200px;">
+                            <h4 style="color: #6a0dad; margin-bottom: 5px;"><i class="fa-solid fa-wallet"></i> ${exp.title}</h4>
+                            <span style="font-size: 0.85rem; color: #666;"><i class="fa-solid fa-calendar"></i> ${exp.date}</span>
+                        </div>
+                        <div style="flex: 1; min-width: 120px; color: #dc3545; font-size: 1.1rem; font-weight: bold;">
+                            ${Math.round(Number(exp.amount)).toLocaleString('en-US')} ج.م
+                        </div>
+                        <div style="display: flex; gap: 10px;" class="hide-in-preview">
+                            <button class="edit-btn" onclick="editExpense('${exp.id}', '${exp.title}', '${exp.amount}', '${exp.date}', event)"><i class="fa-solid fa-pen"></i> تعديل</button>
+                            <button class="delete-btn" onclick="deleteExpense('${exp.id}')"><i class="fa-solid fa-trash"></i> مسح</button>
+                        </div>
+                    `;
+                    container.appendChild(card);
+                });
+            } catch(e) { console.error(e); container.innerHTML = "<p style='color:red; text-align:center;'>خطأ في تحميل المصاريف.</p>"; }
+        }
+
+        window.deleteExpense = async function(id) {
+            if(await showConfirm("متأكدة من مسح هذا المصروف؟")) {
+                try { 
+                    await updateDoc(doc(db, "general_expenses", id), {
+                        isDeleted: true,
+                        deletedBy: currentUserEmail,
+                        deletedAt: new Date().toISOString()
+                    });
+                    showToast("تم النقل للأرشيف السري.");
+                    loadGeneralExpenses(); calculateDailyStats(); 
+                } catch(e) { console.error(e); }
+            }
+        };
+
+        window.editExpense = function(id, title, amount, date, evt) {
+            editingExpId = id;
+            document.getElementById("generalExpTitle").value = title;
+            document.getElementById("generalExpAmount").value = Number(amount).toLocaleString('en-US');
+            document.getElementById("generalExpDate").value = date;
+            document.getElementById("expFormTitle").innerText = "تعديل المصروف";
+            document.getElementById("expCancelBtn").style.display = "inline-block";
+            document.getElementById("addExpenseSection").style.display = "block";
+            window.scrollTo(0, 0);
+        };
+
+        window.secureUpdateCredentials = async function() {
+            const email = document.getElementById("secEmail").value.trim();
+            const oldPassword = document.getElementById("secOldPassword").value;
+            const newEmail = document.getElementById("secNewEmail").value.trim();
+            const newPassword = document.getElementById("secNewPassword").value;
+
+            if(!email || !oldPassword) { showToast("يجب إدخال البريد الحالي وكلمة المرور للتحقق أولاً!", "error"); return; }
+            const user = auth.currentUser;
+            if(!user) { showToast("يجب تسجيل الدخول أولاً.", "error"); return; }
+
+            try {
+                const credential = EmailAuthProvider.credential(email, oldPassword);
+                await reauthenticateWithCredential(user, credential);
+                
+                let msg = "تم التحديث بنجاح: ";
+                if(newPassword && newPassword.length >= 6) { await updatePassword(user, newPassword); msg += "كلمة المرور "; }
+                if(newEmail) { await updateEmail(user, newEmail); msg += "والبريد الإلكتروني "; }
+
+                showToast(msg + "بأمان تام!");
+                document.getElementById("secEmail").value = ""; document.getElementById("secOldPassword").value = ""; document.getElementById("secNewEmail").value = ""; document.getElementById("secNewPassword").value = "";
+            } catch (error) { console.error(error); showToast("خطأ في بيانات التحقق أو أن البريد الجديد مستخدم مسبقاً!", "error"); }
+        };
+
+        window.addNewEmbassyMaster = async function() {
+            const input = document.getElementById("newEmbassyNameInput");
+            const val = input.value.trim();
+            if(!val) { showToast("أدخلي اسم السفارة!", "error"); return; }
+
+            try {
+                await addDoc(collection(db, "embassies"), { name: val });
+                input.value = "";
+                showToast("تمت إضافة السفارة بنجاح!");
+                loadEmbassiesMasterList();
+            } catch(e) { console.error(e); showToast("حدث خطأ أثناء الإضافة.", "error"); }
+        };
+
+        window.loadEmbassiesMasterList = async function() {
+            const container = document.getElementById("embassiesMasterListContainer");
+            container.innerHTML = "<p style='text-align:center;'>جاري التحميل...</p>";
+            try {
+                const snap = await getDocs(collection(db, "embassies"));
+                container.innerHTML = "";
+                if(snap.empty) {
+                    container.innerHTML = "<p style='text-align:center; color:#888;'>لا يوجد سفارات مسجلة حالياً.</p>";
+                    return;
+                }
+                snap.forEach(docSnap => {
+                    const emb = docSnap.data();
+                    const id = docSnap.id;
+                    const card = document.createElement("div");
+                    card.className = "list-row";
+                    card.innerHTML = `
+                        <strong style="color: #6a0dad; font-size:1.1rem;"><i class="fa-solid fa-landmark"></i> ${emb.name}</strong>
+                        <button class="delete-btn hide-in-preview" onclick="deleteEmbassyMaster('${id}')"><i class="fa-solid fa-trash"></i> مسح</button>
+                    `;
+                    container.appendChild(card);
+                });
+            } catch(e) { console.error(e); container.innerHTML = "<p style='color:red; text-align:center;'>خطأ في التحميل.</p>"; }
+        };
+
+        window.deleteEmbassyMaster = async function(id) {
+            if(await showConfirm("هل أنتِ متأكدة من حذف هذه السفارة؟")) {
+                try {
+                    await deleteDoc(doc(db, "embassies", id));
+                    loadEmbassiesMasterList();
+                } catch(e) { console.error(e); }
+            }
+        };
+
+        window.downloadJsonBackup = async function() {
+            try {
+                const clientsSnap = await getDocs(collection(db, "clients"));
+                const clients = []; clientsSnap.forEach(d => { if(!d.data().isDeleted) clients.push(d.data()) });
+
+                const empSnap = await getDocs(collection(db, "employees"));
+                const employees = []; empSnap.forEach(d => { if(!d.data().isDeleted) employees.push(d.data()) });
+
+                const expSnap = await getDocs(collection(db, "general_expenses"));
+                const expenses = []; expSnap.forEach(d => { if(!d.data().isDeleted) expenses.push(d.data()) });
+
+                const backupData = {
+                    backupDate: new Date().toISOString(),
+                    clients, employees, expenses
+                };
+
+                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData, null, 2));
+                const dlAnchorElem = document.createElement('a');
+                dlAnchorElem.setAttribute("href", dataStr);
+                dlAnchorElem.setAttribute("download", `Visora_Backup_${getLocalDateStr()}.json`);
+                document.body.appendChild(dlAnchorElem);
+                dlAnchorElem.click();
+                dlAnchorElem.remove();
+            } catch(e) { console.error(e); showToast("حدث خطأ أثناء تحميل النسخة الاحتياطية.", "error"); }
+        };
+
+        function renderReportCharts(embassyStats, clientStats) {
+            const embCanvas = document.getElementById('embassyChart');
+            const salesCanvas = document.getElementById('salesChart');
+            if(!embCanvas || !salesCanvas) return;
+
+            const embCtx = embCanvas.getContext('2d');
+            const salesCtx = salesCanvas.getContext('2d');
+
+            if(embassyChartInstance) embassyChartInstance.destroy();
+            if(salesChartInstance) salesChartInstance.destroy();
+
+            const embLabels = Object.keys(embassyStats);
+            const embData = Object.values(embassyStats);
+
+            embassyChartInstance = new Chart(embCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: embLabels.length ? embLabels : ['لا يوجد'],
+                    datasets: [{
+                        data: embData.length ? embData : [1],
+                        backgroundColor: ['#6a0dad', '#d4af37', '#198754', '#dc3545', '#0dcaf0', '#fd7e14']
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+
+            const salesNames = Object.keys(clientStats);
+            const salesRevs = salesNames.map(k => clientStats[k].rev);
+
+            salesChartInstance = new Chart(salesCtx, {
+                type: 'bar',
+                data: {
+                    labels: salesNames.length ? salesNames : ['لا يوجد'],
+                    datasets: [{
+                        label: 'إيراد المبيعات (ج.م)',
+                        data: salesRevs.length ? salesRevs : [0],
+                        backgroundColor: '#6a0dad'
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
+            });
+        }
+
+        async function loadSalesForCommission(selectedMonth, clientStats) {
+            const container = document.getElementById("salesCommissionContainer");
+            container.innerHTML = "جاري تحميل وتفنيد عمولات السيلز...";
+            try {
+                const snap = await getDocs(collection(db, "employees"));
+                container.innerHTML = "";
+                let found = false;
+
+                snap.forEach(docSnap => {
+                    const emp = docSnap.data();
+                    if(emp.isDeleted) return; 
+                    
+                    const isSales = emp.role && (emp.role.includes("سيلز") || emp.role.includes("مبيعات"));
+                    if(isSales) {
+                        found = true;
+                        const empRev = clientStats[emp.name]?.rev || 0;
+                        const empExp = clientStats[emp.name]?.exp || 0;
+                        const empSal = parseNum(emp.salary);
+                        const netBase = empRev - empExp - empSal;
+
+                        const div = document.createElement("div");
+                        div.style.cssText = "display: flex; justify-content: space-between; align-items: center; background: white; padding: 15px; border-radius: 8px; margin-bottom: 12px; border: 1px solid #ddd; flex-wrap: wrap; gap: 15px;";
+                        div.innerHTML = `
+                            <div style="flex: 2; min-width: 250px;">
+                                <strong style="color: #6a0dad; font-size: 1.1rem;"><i class="fa-solid fa-headset"></i> ${emp.name}</strong><br>
+                                <div style="font-size: 0.85rem; color: #666; margin-top: 6px; line-height: 1.6;">
+                                    إيرادات الخزنة المحصلة لشغلها: <strong style="color: #198754;">${Math.round(empRev).toLocaleString('en-US')} ج.م</strong> | 
+                                    مصاريف ملفاتها: <strong style="color: #dc3545;">${Math.round(empExp).toLocaleString('en-US')} ج.م</strong><br>
+                                    مرتبها الأساسي: <strong style="color: #d4af37;">${Math.round(empSal).toLocaleString('en-US')} ج.م</strong>
+                                </div>
+                                <div style="font-size: 0.95rem; margin-top: 8px; background: #fdfbf7; padding: 5px 10px; border-radius: 5px; border: 1px dashed #d4af37; display: inline-block;">
+                                    الصافي القابل للعمولة: <strong style="color: #6a0dad;">${Math.round(netBase).toLocaleString('en-US')} ج.م</strong>
+                                </div>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 10px; flex: 1; min-width: 150px; justify-content: flex-end;">
+                                <label style="margin:0; font-size:0.9rem;">النسبة %:</label>
+                                <input type="number" class="sales-comm-rate" data-name="${emp.name}" data-net="${netBase}" value="0" step="0.5" style="max-width: 80px; margin-bottom: 0; text-align: center; border-color: #6a0dad;" oninput="updateCalculatedCommission()">
+                                <div style="text-align: left;">
+                                    <span style="font-size: 1.1rem; font-weight: bold; color: #198754;" class="sales-comm-result">0 ج.م</span>
+                                </div>
+                            </div>
+                        `;
+                        container.appendChild(div);
+                    }
+                });
+                if(!found) container.innerHTML = "<p style='color:#777;'>لا يوجد موظفات سيلز مسجلات حالياً.</p>";
+            } catch(e) { console.error(e); container.innerHTML = "خطأ في تحميل العمولات."; }
+        }
+
+        window.updateCalculatedCommission = function() {
+            calculateMonthlyReportCore(false);
+        };
+
+        let lastReportData = null;
+        window.calculateMonthlyReport = async function() { calculateMonthlyReportCore(true); }
+
+        async function calculateMonthlyReportCore(showAlerts = true) {
+            const selectedMonth = document.getElementById("reportMonthInput").value; 
+            if(!selectedMonth) { if(showAlerts) showToast("اختر الشهر أولاً!", "error"); return; }
+
+            try {
+                const clientsSnap = await getDocs(collection(db, "clients"));
+                let totalPaid = 0; let totalFileExp = 0;
+                let clientStats = {};
+                let embassyStats = {};
+
+                clientsSnap.forEach(docSnap => {
+                    const data = docSnap.data();
+                    if(data.isDeleted) return; 
+                    
+                    let monthPaidFromThisClient = 0;
+                    if(data.paymentsLog && Array.isArray(data.paymentsLog)) {
+                        data.paymentsLog.forEach(p => {
+                            if(p.date && p.date.startsWith(selectedMonth)) {
+                                monthPaidFromThisClient += parseNum(p.amount);
+                            }
+                        });
+                    } else if(data.date && data.date.startsWith(selectedMonth)) {
+                        monthPaidFromThisClient += parseNum(data.paid);
+                    }
+
+                    totalPaid += monthPaidFromThisClient;
+
+                    let fExp = 0;
+                    if(data.date && data.date.startsWith(selectedMonth)) {
+                        fExp = parseNum(data.totalExpenses);
+                        totalFileExp += fExp;
+
+                        const emb = data.embassy || 'غير محدد';
+                        embassyStats[emb] = (embassyStats[emb] || 0) + 1;
+                    }
+
+                    if(data.salesRep && (monthPaidFromThisClient > 0 || (data.date && data.date.startsWith(selectedMonth)))) {
+                        if(!clientStats[data.salesRep]) clientStats[data.salesRep] = { rev: 0, exp: 0 };
+                        clientStats[data.salesRep].rev += monthPaidFromThisClient;
+                        if(data.date && data.date.startsWith(selectedMonth)) {
+                            clientStats[data.salesRep].exp += fExp;
+                        }
+                    }
+                });
+
+                if(showAlerts) { 
+                    await loadSalesForCommission(selectedMonth, clientStats); 
+                    renderReportCharts(embassyStats, clientStats);
+                }
+
+                const empSnap = await getDocs(collection(db, "employees"));
+                let totalSalaries = 0; let salesSalaries = 0; let adminSalaries = 0;
+
+                empSnap.forEach(docSnap => {
+                    const emp = docSnap.data();
+                    if(emp.isDeleted) return; 
+                    
+                    const sal = parseNum(emp.salary);
+                    totalSalaries += sal;
+                    const isSales = emp.role && (emp.role.includes("سيلز") || emp.role.includes("مبيعات"));
+                    if(isSales) { salesSalaries += sal; } else { adminSalaries += sal; }
+                });
+
+                let totalCommissions = 0;
+                document.querySelectorAll(".sales-comm-rate").forEach(inp => {
+                    const net = parseFloat(inp.dataset.net) || 0;
+                    const rate = parseFloat(inp.value) || 0;
+                    let commVal = net > 0 ? net * (rate / 100) : 0;
+                    totalCommissions += commVal;
+
+                    const resultSpan = inp.parentElement.querySelector('.sales-comm-result');
+                    if(resultSpan) resultSpan.innerText = Math.round(commVal).toLocaleString('en-US') + " ج.م";
+                });
+
+                const genExpSnap = await getDocs(collection(db, "general_expenses"));
+                let totalGenExp = 0;
+                genExpSnap.forEach(docSnap => {
+                    const exp = docSnap.data();
+                    if(exp.isDeleted) return; 
+                    if(exp.date && exp.date.startsWith(selectedMonth)) { totalGenExp += parseNum(exp.amount); }
+                });
+
+                const grossClientProfit = totalPaid - totalFileExp;
+                const salesNetProfit = grossClientProfit - (salesSalaries + totalCommissions);
+                const totalAdminExpenses = adminSalaries + totalGenExp;
+                const netProfitFinal = salesNetProfit - totalAdminExpenses;
+
+                const lockDocRef = doc(db, "locked_months", selectedMonth);
+                const lockSnap = await getDoc(lockDocRef);
+                const isLocked = lockSnap.exists() && lockSnap.data().locked === true;
+
+                lastReportData = {
+                    month: selectedMonth, totalPaid, totalFileExp, salesSalaries, totalCommissions, salesNetProfit, totalGenExp, adminSalaries, netProfitFinal, isLocked
+                };
+
+                document.getElementById("repTotalPaid").innerText = Math.round(totalPaid).toLocaleString('en-US') + " ج.م";
+                document.getElementById("repTotalFileExp").innerText = Math.round(totalFileExp).toLocaleString('en-US') + " ج.م";
+                document.getElementById("repSalesSalaries").innerText = Math.round(salesSalaries).toLocaleString('en-US') + " ج.م";
+                document.getElementById("repSalesComm").innerText = Math.round(totalCommissions).toLocaleString('en-US') + " ج.م";
+                document.getElementById("repSalesNet").innerText = Math.round(salesNetProfit).toLocaleString('en-US') + " ج.م";
+                document.getElementById("repGeneralExp").innerText = Math.round(totalGenExp).toLocaleString('en-US') + " ج.م";
+                document.getElementById("repAdminSalaries").innerText = Math.round(adminSalaries).toLocaleString('en-US') + " ج.م";
+                document.getElementById("repNetProfit").innerText = Math.round(netProfitFinal).toLocaleString('en-US') + " ج.م";
+
+                const lockWrapper = document.getElementById("lockMonthWrapper");
+                if(isLocked) {
+                    lockWrapper.innerHTML = `<span style="background: #198754; color: white; padding: 8px 15px; border-radius: 8px; font-weight: bold;"><i class="fa-solid fa-lock"></i> الشهر مغلق مالياً</span>`;
+                    document.querySelectorAll(".sales-comm-rate").forEach(inp => inp.disabled = true);
+                } else {
+                    lockWrapper.innerHTML = `<button id="lockMonthBtn" onclick="lockCurrentMonth()" style="background: #dc3545; padding: 8px 15px; font-size: 0.9rem; width: auto;"><i class="fa-solid fa-lock"></i> قفل حساب الشهر نهائياً</button>`;
+                }
+
+                document.getElementById("printMonthLabel").innerText = `تقرير شهر: ${selectedMonth}`;
+                document.getElementById("printIssueDate").innerText = new Date().toLocaleDateString('en-GB');
+                
+                const printBody = document.getElementById("printTableBody");
+                printBody.innerHTML = `
+                    <tr><td style="padding: 10px; border: 1px solid #ddd;">إيرادات الخزنة المحصلة هذا الشهر</td><td style="padding: 10px; border: 1px solid #ddd; text-align: left;">${Math.round(totalPaid).toLocaleString('en-US')} ج.م</td></tr>
+                    <tr><td style="padding: 10px; border: 1px solid #ddd;">مصاريف الملفات (سفارات وطيران)</td><td style="padding: 10px; border: 1px solid #ddd; text-align: left;">${Math.round(totalFileExp).toLocaleString('en-US')} ج.م</td></tr>
+                    <tr><td style="padding: 10px; border: 1px solid #ddd;">مرتبات السيلز الأساسية</td><td style="padding: 10px; border: 1px solid #ddd; text-align: left;">${Math.round(salesSalaries).toLocaleString('en-US')} ج.م</td></tr>
+                    <tr><td style="padding: 10px; border: 1px solid #ddd;">إجمالي عمولات السيلز</td><td style="padding: 10px; border: 1px solid #ddd; text-align: left;">${Math.round(totalCommissions).toLocaleString('en-US')} ج.م</td></tr>
+                    <tr><td style="padding: 10px; border: 1px solid #ddd;">صافي ربح السيلز المبدئي</td><td style="padding: 10px; border: 1px solid #ddd; text-align: left;">${Math.round(salesNetProfit).toLocaleString('en-US')} ج.م</td></tr>
+                    <tr><td style="padding: 10px; border: 1px solid #ddd;">المصاريف العامة (إيجار وكهرباء وغيرها)</td><td style="padding: 10px; border: 1px solid #ddd; text-align: left;">${Math.round(totalGenExp).toLocaleString('en-US')} ج.م</td></tr>
+                    <tr><td style="padding: 10px; border: 1px solid #ddd;">مرتبات الإدارة وباقي الفريق</td><td style="padding: 10px; border: 1px solid #ddd; text-align: left;">${Math.round(adminSalaries).toLocaleString('en-US')} ج.م</td></tr>
+                    <tr style="background: #fdfbf7; font-weight: bold;"><td style="padding: 12px; border: 1px solid #ddd; color: #6a0dad;">صافي ربح الشركة النهائي</td><td style="padding: 12px; border: 1px solid #ddd; text-align: left; color: #198754;">${Math.round(netProfitFinal).toLocaleString('en-US')} ج.م</td></tr>
+                `;
+
+                if(showAlerts) { document.getElementById("reportContainerWrapper").style.display = "block"; }
+            } catch(e) { console.error(e); if(showAlerts) showToast("حدث خطأ أثناء حساب التقرير.", "error"); }
+        };
+
+        window.lockCurrentMonth = async function() {
+            if(!lastReportData) return;
+            if(await showConfirm(`هل أنتِ متأكدة تماماً من قفل حساب شهر (${lastReportData.month}) نهائياً؟\nلن يمكنك التعديل بعد هذه الخطوة.`)) {
+                try {
+                    const lockDocRef = doc(db, "locked_months", lastReportData.month);
+                    await setDoc(lockDocRef, { locked: true, lockedAt: new Date().toISOString() });
+                    showToast("تم قفل الشهر المالي بنجاح وللأبد!");
+                    calculateMonthlyReport();
+                } catch(e) { console.error(e); showToast("حدث خطأ أثناء قفل الشهر.", "error"); }
+            }
+        };
+
+        window.exportReportToExcel = function() {
+            if(!lastReportData) { showToast("يرجى عرض التقرير أولاً قبل التصدير!", "error"); return; }
+
+            let csvContent = "\uFEFF"; 
+            csvContent += "Visora Travel - تقرير الأرباح الشهرية\n";
+            csvContent += `الشهر: ; ${lastReportData.month}\n\n`;
+            csvContent += "بند الحساب; القيمة (جنيه مصري)\n";
+            csvContent += `إيرادات الخزنة المحصلة; ${Math.round(lastReportData.totalPaid)}\n`;
+            csvContent += `مصاريف الملفات (سفارات/طيران); ${Math.round(lastReportData.totalFileExp)}\n`;
+            csvContent += `مرتبات السيلز الأساسية; ${Math.round(lastReportData.salesSalaries)}\n`;
+            csvContent += `إجمالي عمولات السيلز; ${Math.round(lastReportData.totalCommissions)}\n`;
+            csvContent += `صافي ربح السيلز المبدئي; ${Math.round(lastReportData.salesNetProfit)}\n`;
+            csvContent += `المصاريف العامة; ${Math.round(lastReportData.totalGenExp)}\n`;
+            csvContent += `مرتبات الإدارة; ${Math.round(lastReportData.adminSalaries)}\n`;
+            csvContent += `صافي ربح الشركة النهائي; ${Math.round(lastReportData.netProfitFinal)}\n`;
+
+            const encodedUri = encodeURI("data:text/csv;charset=utf-8," + csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `Visora_Report_${lastReportData.month}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        };
+    </script>
+    
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('./sw.js')
+            .then(registration => console.log('ملف الأوفلاين اشتغل بنجاح:', registration.scope))
+            .catch(error => console.log('حصل مشكلة في الأوفلاين:', error));
+        });
+      }
+    </script>
+</body>
+</html>
